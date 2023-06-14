@@ -4,27 +4,20 @@
 	 * @event {{ selectedId: ComboBoxItemId; selectedItem: ComboBoxItem }} select
 	 * @slot {{ item: ComboBoxItem; index: number }}
 	 */
+
+	type T = $$Generic<{ id: any; text: string; disabled: bool }>;
+
 	type GameId = number;
 
-	interface GameItem {
-		id: GameId;
-		cover: string;
-		title: string;
-		disabled: boolean;
-	}
+	let items: Array<T> = [];
 
-	let items: Array<GameItem> = [];
-
-	export let selectedId: GameId | undefined = undefined;
+	export let selectedId: number | undefined = undefined;
 	$: selectedId = selectedIndex > -1 ? items[selectedIndex].id : undefined;
 	/** Specify the selected combobox value */
 	export let value = '';
 
 	/** Set to `true` to disable the combobox */
 	export let disabled = false;
-
-	/** Specify the title text of the combobox */
-	export let titleText = '';
 
 	/** Specify the placeholder text */
 	export let placeholder = '';
@@ -50,7 +43,7 @@
 	/** Set to `true` to open the combobox menu dropdown */
 	export let open = false;
 
-	export let optionsFetcher: (inputVal: string) => Promise<Array<GameItem>>;
+	export let optionsFetcher: (inputVal: string) => Promise<Array<T>>;
 
 	/** Set an id for the list box component */
 	export let id = 'ccs-' + Math.random().toString(36);
@@ -60,8 +53,10 @@
 	 */
 	export let name: string | undefined = undefined;
 
+	export let trueName: string | undefined = undefined;
+
 	/** Obtain a reference to the input HTML element */
-	export let ref: HTMLInputElement = undefined;
+	export let ref: HTMLInputElement | undefined = undefined;
 
 	import { createEventDispatcher, afterUpdate, tick } from 'svelte';
 	import Checkmark from '../icons/Checkmark.svelte';
@@ -125,7 +120,7 @@
 				value = '';
 				highlightedIndex = -1;
 			} else {
-				value = items[selectedIndex].title;
+				value = items[selectedIndex].text;
 			}
 		}
 	});
@@ -144,14 +139,8 @@
 	}}
 />
 
-<div class="relative">
-	{#if titleText}
-		<label for={id} class:bx--label={true} class:bx--label--disabled={disabled}>
-			{titleText}
-		</label>
-	{/if}
+<div class="relative {$$restProps.class}">
 	<ListBox
-		class="{!invalid && warn && 'bx--combo-box--warning'} border"
 		id={comboId}
 		aria-label={ariaLabel}
 		{disabled}
@@ -175,6 +164,7 @@
 			{id}
 			{disabled}
 		>
+			<input type="hidden" name={trueName} value={selectedId} />
 			<input
 				bind:this={ref}
 				bind:value
@@ -192,7 +182,7 @@
 				{id}
 				{name}
 				{...$$restProps}
-				class="bg-transparent outline-none focus:outline-none p-2 w-full"
+				class="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 px-2"
 				on:input={async (e) => {
 					selectedIndex = -1;
 					if (!open && e.target.value.length > 0) {
@@ -218,20 +208,20 @@
 							open = false;
 
 							if (!items[highlightedIndex].disabled) {
-								value = items[highlightedIndex].title;
+								value = items[highlightedIndex].text;
 								selectedIndex = highlightedIndex;
 							}
 							highlightedIndex = -1;
 						} else {
 							// searching typed value in text list with lowercase
 							const matchedIndex = items.findIndex(
-								(game) => game.title.toLowerCase() == value?.toLowerCase() && !game.disabled
+								(game) => game.text.toLowerCase() == value?.toLowerCase() && !game.disabled
 							);
 							if (matchedIndex != -1) {
 								// typed value has matched or fallback to first enabled item
 								open = false;
 								selectedIndex = matchedIndex;
-								value = items[selectedIndex].title;
+								value = items[selectedIndex].text;
 							}
 						}
 					} else if (key == 'Tab') {
@@ -290,7 +280,7 @@
 				aria-label={ariaLabel}
 				{id}
 				on:scroll
-				class="absolute top-full w-full bg-white border border-gray-300 overflow-y-auto max-h-48"
+				class="absolute top-full w-full bg-white/5 border  overflow-y-auto max-h-48 z-20"
 			>
 				{#each items as item, i (item.id)}
 					<ListBoxMenuItem
@@ -312,10 +302,7 @@
 						}}
 					>
 						<slot {item} index={i}>
-							<div class="flex items-center px-2 py-1">
-								<img src={item.cover} class="w-10 mr-2" alt="{item.title} cover" />
-								{item.title}
-							</div>
+							<div class="py-3 px-2">{item.text}</div>
 						</slot>
 						{#if selectedIndex != -1 && items[selectedIndex].id == item.id}
 							<div class="absolute top-0 right-3 h-full flex items-center">

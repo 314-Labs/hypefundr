@@ -21,9 +21,9 @@
 <div
 	role="option"
 	tabindex="-1"
-	class="bg-gray-100 cursor-pointer"
-	class:bg-gray-300={active}
-	class:bg-gray-200={highlighted || active}
+	class="bg-gray-700 cursor-pointer"
+	class:bg-gray-600={active}
+	class:bg-gray-400={highlighted || active}
 	aria-selected={active}
 	disabled={disabled ? true : undefined}
 	{...$$restProps}

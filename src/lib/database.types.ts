@@ -7,49 +7,66 @@ export type Json =
   | Json[]
 
 export interface Database {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       campaign_likes: {
         Row: {
           campaign_id: number
           liked_at: string | null
-          user: string
+          user_id: string
         }
         Insert: {
           campaign_id: number
           liked_at?: string | null
-          user: string
+          user_id: string
         }
         Update: {
           campaign_id?: number
           liked_at?: string | null
-          user?: string
+          user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_likes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_likes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      campaign_participants: {
+        Row: {
+          campaign_id: number
+          user_id: string
+        }
+        Insert: {
+          campaign_id: number
+          user_id: string
+        }
+        Update: {
+          campaign_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_participants_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_participants_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       campaign_payouts: {
         Row: {
@@ -70,6 +87,14 @@ export interface Database {
           credited_at?: string
           id?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_payouts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       campaign_results: {
         Row: {
@@ -93,6 +118,20 @@ export interface Database {
           user_id?: string
           won?: boolean
         }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_results_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_results_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       campaigns: {
         Row: {
@@ -101,7 +140,10 @@ export interface Database {
           description: string
           game_id: number | null
           game_mode: number | null
+          goal: number | null
           id: number
+          slug: string
+          tagline: string | null
           title: string
         }
         Insert: {
@@ -110,7 +152,10 @@ export interface Database {
           description: string
           game_id?: number | null
           game_mode?: number | null
+          goal?: number | null
           id?: number
+          slug?: string
+          tagline?: string | null
           title: string
         }
         Update: {
@@ -119,9 +164,32 @@ export interface Database {
           description?: string
           game_id?: number | null
           game_mode?: number | null
+          goal?: number | null
           id?: number
+          slug?: string
+          tagline?: string | null
           title?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_creator_fkey"
+            columns: ["creator"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_game_id_fkey"
+            columns: ["game_id"]
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_game_mode_fkey"
+            columns: ["game_mode"]
+            referencedRelation: "game_modes"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       game_modes: {
         Row: {
@@ -139,6 +207,14 @@ export interface Database {
           id?: number
           mode?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "game_modes_game_id_fkey"
+            columns: ["game_id"]
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       games: {
         Row: {
@@ -156,6 +232,44 @@ export interface Database {
           igdb_id?: number
           title?: string
         }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount: number
+          campaign_id: number | null
+          created_at: string | null
+          id: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          campaign_id?: number | null
+          created_at?: string | null
+          id?: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          campaign_id?: number | null
+          created_at?: string | null
+          id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       pledges: {
         Row: {
@@ -179,6 +293,20 @@ export interface Database {
           id?: number
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "pledges_campaign_id_fkey"
+            columns: ["campaign_id"]
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pledges_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       profiles: {
         Row: {
@@ -205,174 +333,25 @@ export interface Database {
           username?: string | null
           website?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-  storage: {
-    Tables: {
-      buckets: {
-        Row: {
-          allowed_mime_types: string[] | null
-          avif_autodetection: boolean | null
-          created_at: string | null
-          file_size_limit: number | null
-          id: string
-          name: string
-          owner: string | null
-          public: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id: string
-          name: string
-          owner?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          allowed_mime_types?: string[] | null
-          avif_autodetection?: boolean | null
-          created_at?: string | null
-          file_size_limit?: number | null
-          id?: string
-          name?: string
-          owner?: string | null
-          public?: boolean | null
-          updated_at?: string | null
-        }
-      }
-      migrations: {
-        Row: {
-          executed_at: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Insert: {
-          executed_at?: string | null
-          hash: string
-          id: number
-          name: string
-        }
-        Update: {
-          executed_at?: string | null
-          hash?: string
-          id?: number
-          name?: string
-        }
-      }
-      objects: {
-        Row: {
-          bucket_id: string | null
-          created_at: string | null
-          id: string
-          last_accessed_at: string | null
-          metadata: Json | null
-          name: string | null
-          owner: string | null
-          path_tokens: string[] | null
-          updated_at: string | null
-          version: string | null
-        }
-        Insert: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          version?: string | null
-        }
-        Update: {
-          bucket_id?: string | null
-          created_at?: string | null
-          id?: string
-          last_accessed_at?: string | null
-          metadata?: Json | null
-          name?: string | null
-          owner?: string | null
-          path_tokens?: string[] | null
-          updated_at?: string | null
-          version?: string | null
-        }
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      can_insert_object: {
+      get_pledge_total: {
         Args: {
-          bucketid: string
-          name: string
-          owner: string
-          metadata: Json
+          campaign_id: number
         }
-        Returns: undefined
-      }
-      extension: {
-        Args: {
-          name: string
-        }
-        Returns: string
-      }
-      filename: {
-        Args: {
-          name: string
-        }
-        Returns: string
-      }
-      foldername: {
-        Args: {
-          name: string
-        }
-        Returns: unknown
-      }
-      get_size_by_bucket: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          size: number
-          bucket_id: string
-        }[]
-      }
-      search: {
-        Args: {
-          prefix: string
-          bucketname: string
-          limits?: number
-          levels?: number
-          offsets?: number
-          search?: string
-          sortcolumn?: string
-          sortorder?: string
-        }
-        Returns: {
-          name: string
-          id: string
-          updated_at: string
-          created_at: string
-          last_accessed_at: string
-          metadata: Json
-        }[]
+        Returns: number
       }
     }
     Enums: {
