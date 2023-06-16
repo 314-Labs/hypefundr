@@ -63,7 +63,7 @@ export interface Database {
           {
             foreignKeyName: "campaign_participants_user_id_fkey"
             columns: ["user_id"]
-            referencedRelation: "users"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           }
         ]
@@ -135,6 +135,7 @@ export interface Database {
       }
       campaigns: {
         Row: {
+          closed: boolean
           created_at: string
           creator: string
           description: string
@@ -147,6 +148,7 @@ export interface Database {
           title: string
         }
         Insert: {
+          closed?: boolean
           created_at?: string
           creator: string
           description: string
@@ -159,6 +161,7 @@ export interface Database {
           title: string
         }
         Update: {
+          closed?: boolean
           created_at?: string
           creator?: string
           description?: string
@@ -347,6 +350,12 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+      distribute_campaign_funds: {
+        Args: {
+          campaign_id_input: number
+        }
+        Returns: undefined
+      }
       get_pledge_total: {
         Args: {
           campaign_id: number

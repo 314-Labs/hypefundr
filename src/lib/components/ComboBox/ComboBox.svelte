@@ -210,6 +210,10 @@
 							if (!items[highlightedIndex].disabled) {
 								value = items[highlightedIndex].text;
 								selectedIndex = highlightedIndex;
+								dispatch('select', {
+									id: items[selectedIndex].id,
+									text: items[selectedIndex].text
+								});
 							}
 							highlightedIndex = -1;
 						} else {
@@ -221,6 +225,11 @@
 								// typed value has matched or fallback to first enabled item
 								open = false;
 								selectedIndex = matchedIndex;
+								dispatch('select', {
+									id: items[selectedIndex].id,
+									text: items[selectedIndex].text
+								});
+
 								value = items[selectedIndex].text;
 							}
 						}
@@ -295,6 +304,10 @@
 							}
 							selectedIndex = i;
 							open = false;
+							dispatch('select', {
+								id: items[selectedIndex].id,
+								text: items[selectedIndex].text
+							});
 						}}
 						on:mouseenter={() => {
 							if (item.disabled) return;

@@ -47,6 +47,7 @@
 		"flowbite": "^1.6.5",
 		"flowbite-svelte": "^0.35.4",
 		"svelte-headlessui": "^0.0.15",
+		"svelte-transition": "^0.0.9",
 		"tinymce": "^6.4.2"
 	}
 }

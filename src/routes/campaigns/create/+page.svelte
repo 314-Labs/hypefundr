@@ -2,10 +2,19 @@
 	import Autocomplete from './autocomplete.svelte';
 	export let data;
 	import ComboBox from '$lib/components/ComboBox/ComboBox.svelte';
-	import { getGameCover } from '$lib/util';
+	import { getAvatar, getGameCover } from '$lib/util';
 	import Editor from '@tinymce/tinymce-svelte';
+	import { fade } from 'svelte/transition';
 	let gameId: number | undefined = undefined;
+
+	interface UserDisplayInfo {
+		id: string;
+		username: string;
+	}
+	let campaignUsers: UserDisplayInfo[] = [];
+
 	let gameModeComboBox: ComboBox<Awaited<ReturnType<typeof fetchGameModes>>[number]>;
+
 	let descriptionText: string = '';
 	const fetchGames = async (title: string) => {
 		gameModeComboBox.clear();
@@ -87,42 +96,55 @@
 				</div>
 				<div class="sm:col-span-2">
 					<label for="name" class="block mb-2 text-sm font-medium">Add Users</label>
-
-					<div
-						class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-					>
-						<div class="flex-shrink-0">
-							<img
-								class="h-10 w-10 rounded-full"
-								src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-								alt=""
-							/>
-						</div>
-						<div class="min-w-0 flex-1">
-							<div class="focus:outline-none">
-								<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-							</div>
-						</div>
-						<a href="/asdfszdf" target="_blank" class="ml-auto text-sm text-blue-400">Profile</a>
-						<button
-							type="button"
-							class="rounded-full bg-indigo-600 p-1 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+					{#each campaignUsers as user (user.id)}
+						<div
+							transition:fade
+							class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
 						>
-							<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-								<path
-									d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
+							<div class="flex-shrink-0">
+								<img
+									class="h-10 w-10 rounded-full"
+									src={getAvatar(data.supabase, user.id)}
+									alt=""
 								/>
-							</svg>
-						</button>
-					</div>
-
+							</div>
+							<div class="min-w-0 flex-1">
+								<div class="focus:outline-none">
+									<p class="text-sm font-medium text-gray-300">{user.username}</p>
+								</div>
+							</div>
+							<a href="/asdfszdf" target="_blank" class="ml-auto text-sm text-blue-400">Profile</a>
+							<button
+								on:click={() => {
+									campaignUsers = campaignUsers.filter((x) => x.id != user.id);
+								}}
+								type="button"
+								class="rounded-full bg-indigo-700/75 p-1 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke-width="1.5"
+									stroke="currentColor"
+									class="w-6 h-6"
+								>
+									<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+								</svg>
+							</button>
+							<input type="hidden" name="userIds" value={user.id} />
+						</div>
+					{/each}
 					<ComboBox
 						class="mt-4"
 						titleText="Users"
 						name="user-select"
 						placeholder="Select Campaign Users"
 						optionsFetcher={fetchUsers}
-						let:item
+						on:select={({ detail: { id, text } }) => {
+							const alreadyAdded = campaignUsers.find((x) => x.id == id) != undefined;
+							if (!alreadyAdded) campaignUsers = [...campaignUsers, { id: id, username: text }];
+						}}
 					/>
 				</div>
 				<div class="w-full">

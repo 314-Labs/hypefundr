@@ -18,6 +18,6 @@ export const load =  (async ({params: {slug}, parent}) => {
         const { count: likeCount} = await supabase.from('campaign_likes').select('*', { count: 'exact', head: true }).eq('campaign_id', campaign.id).eq('user_id', session.user.id);
         hasLiked = likeCount == 1;
     }
-
-    return {campaign, pledgeAmount, hasLiked};
+    const { data: participants, error: fuck } = await supabase.from('campaign_participants').select('*, profiles (username)').eq('campaign_id', campaign.id);
+    return {campaign, pledgeAmount, hasLiked, participants};
 }) satisfies PageLoad;

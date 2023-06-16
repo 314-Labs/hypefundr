@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getGameCover } from '$lib/util';
+	import { getAvatar, getGameCover } from '$lib/util';
 	import { supabase } from '@supabase/auth-ui-shared';
 	import type { PageData } from './$types';
 	import { Button, Modal, Toast } from 'flowbite-svelte';
@@ -44,7 +44,9 @@
 		}
 	};
 
-	const unlikeCampaign = async () => {};
+	const distributeFunds = async () => {
+		await data.supabase.rpc('distribute_campaign_funds', { campaign_id_input: data.campaign!.id });
+	};
 </script>
 
 <Toast color="green" class="fixed right-5 top-5" bind:open={show}>
@@ -78,6 +80,11 @@
 		{/if}
 	</div>
 </div>
+{#if data.campaign.closed}
+	<div class=" bg-blue-800 px-6 py-2.5 text-center">
+		<p class="text-sm leading-6 text-white/80">This campaign has already ended.</p>
+	</div>
+{/if}
 <div
 	class="container mx-auto flex md:flex-row-reverse py-10 px-1 flex-col lg:px-20 lg:py-24 lg:max-w-7xl gap-8"
 >
@@ -96,135 +103,60 @@
 
 		<hr class="w-full border-t border-gray-300" />
 		<GlowingPanel pledged={data.pledgeAmount} goal={data.campaign?.goal} />
-		<div>
-			<Button
-				on:click={() => (defaultModal = true)}
-				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-gray-100 text-slate-900 rounded-sm hover:bg-gray-300 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-				>Pledge</Button
-			>
+		<div class="space-y-4">
+			{#if (!data.campaign.closed && data.campaign.goal != null && data.campaign.goal <= data.pledgeAmount) || (data.campaign.goal == null && data.pledgeAmount > 0)}
+				<Button
+					on:click={distributeFunds}
+					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+					>End Campaign and Distribute Funds</Button
+				>
+			{/if}
+			{#if !data.campaign.closed}
+				<Button
+					on:click={() => (defaultModal = true)}
+					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-gray-100 text-slate-900 rounded-sm hover:bg-gray-300 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+					>Pledge</Button
+				>
+			{/if}
 			<Button
 				on:click={toggleLike}
-				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80 mt-4"
-				>{#if data.hasLiked} Unlike {:else} Like {/if}</Button
+				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+				>{#if data.hasLiked} Liked {:else} Like {/if}</Button
 			>
 		</div>
 	</div>
 	<div class="flex-grow text-slate-400">
-		<div class="flex flex-wrap w-full">
-			<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
-				<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">Participants</h2>
-				<div class="h-1 w-20 bg-indigo-500 rounded" />
-			</div>
-		</div>
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-						<p class="truncate text-sm text-gray-500">Co-Founder / CEO</p>
-					</a>
+		{#if data.participants}
+			<div class="flex flex-wrap w-full">
+				<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
+					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">
+						Participants
+					</h2>
+					<div class="h-1 w-20 bg-indigo-500 rounded" />
 				</div>
 			</div>
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-						<p class="truncate text-sm text-gray-500">Co-Founder / CEO</p>
-					</a>
-				</div>
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+				{#each data.participants as participant}
+					<div
+						class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+					>
+						<div class="flex-shrink-0">
+							<img
+								class="h-10 w-10 rounded-full"
+								src={getAvatar(data.supabase, participant.user_id)}
+								alt=""
+							/>
+						</div>
+						<div class="min-w-0 flex-1">
+							<a href="#" class="focus:outline-none">
+								<span class="absolute inset-0" aria-hidden="true" />
+								<p class="text-sm font-medium text-gray-300">{participant.profiles.username}</p>
+							</a>
+						</div>
+					</div>
+				{/each}
 			</div>
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-						<p class="truncate text-sm text-gray-500">Co-Founder / CEO</p>
-					</a>
-				</div>
-			</div>
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-					</a>
-				</div>
-			</div>
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-						<p class="truncate text-sm text-gray-500">Co-Founder / CEO</p>
-					</a>
-				</div>
-			</div>
-			<div
-				class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-			>
-				<div class="flex-shrink-0">
-					<img
-						class="h-10 w-10 rounded-full"
-						src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-						alt=""
-					/>
-				</div>
-				<div class="min-w-0 flex-1">
-					<a href="#" class="focus:outline-none">
-						<span class="absolute inset-0" aria-hidden="true" />
-						<p class="text-sm font-medium text-gray-300">Leslie Alexander</p>
-						<p class="truncate text-sm text-gray-500">Co-Founder / CEO</p>
-					</a>
-				</div>
-			</div>
-		</div>
+		{/if}
 
 		<div class="flex flex-wrap w-full mt-8">
 			<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
