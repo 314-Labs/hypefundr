@@ -2,10 +2,10 @@
 
 Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
 
-## Updating supabase types
+## Updating edgedb client
 
 ```
-supabase gen types typescript --linked  --schema public > src/lib/database.types.ts
+npx @edgedb/generate edgeql-js
 ```
 
 ## Developing

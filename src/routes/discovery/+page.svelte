@@ -2,7 +2,7 @@
 	import { getGameCover } from '$lib/util.js';
 
 	export let data;
-	$: ({ supabase, session } = data);
+	$: ({ session } = data);
 </script>
 
 <section class="text-gray-600 body-font">
@@ -21,11 +21,11 @@
 					<a class="bg-gray-100 p-6 rounded-lg block" href={`/campaigns/${campaign.slug}`}>
 						<img
 							class="h-40 rounded w-full object-cover object-center mb-6"
-							src={getGameCover(supabase, campaign.game_id)}
+							src={getGameCover(campaign.game.id)}
 							alt="content"
 						/>
 						<h3 class="tracking-widest text-indigo-500 text-xs font-medium title-font">
-							{campaign.games.title}
+							{campaign.game.title}
 						</h3>
 						<h2 class="text-lg text-gray-900 font-medium title-font mb-4">{campaign.title}</h2>
 						<p class="leading-relaxed text-base">

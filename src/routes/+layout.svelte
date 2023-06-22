@@ -17,23 +17,8 @@
 		Button
 	} from 'flowbite-svelte';
 	import { page } from '$app/stores';
-	import { getAvatar } from '$lib/util';
 	export let data;
-
-	$: ({ supabase, session } = data);
 	let showDropdown = false;
-	onMount(() => {
-		const { data } = supabase.auth.onAuthStateChange((event, _session) => {
-			if (_session?.expires_at !== session?.expires_at) {
-				invalidate('supabase:auth');
-			}
-		});
-
-		return () => data.subscription.unsubscribe();
-	});
-	const flip = () => {
-		showDropdown = !showDropdown;
-	};
 </script>
 
 {#if $page.url.pathname != '/login'}
@@ -109,6 +94,7 @@
 				<div class="flex items-center">
 					<div class="flex-shrink-0">
 						<a
+							hidden={!$page.data.session}
 							class="relative inline-flex items-center gap-x-1.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
 							href="/campaigns/create"
 						>
@@ -148,7 +134,7 @@
 						</button>
 
 						<!-- Profile dropdown -->
-						{#if session}
+						{#if $page.data.session}
 							<div class="relative ml-3">
 								<div>
 									<button
@@ -157,12 +143,12 @@
 										id="user-menu-button"
 										aria-expanded="false"
 										aria-haspopup="true"
-										on:click={flip}
+										on:click={() => (showDropdown = !showDropdown)}
 									>
 										<span class="sr-only">Open user menu</span>
 										<img
 											class="h-8 w-8 rounded-full"
-											src={getAvatar(supabase, session.user.id)}
+											src={$page.data.session.user?.image}
 											alt="User avatar"
 										/>
 									</button>
@@ -233,16 +219,6 @@
 					class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
 					>Discovery</a
 				>
-				<a
-					href="#"
-					class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
-					>Projects</a
-				>
-				<a
-					href="#"
-					class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
-					>Calendar</a
-				>
 			</div>
 			<div class="border-t border-gray-700 pb-3 pt-4">
 				<div class="flex items-center px-5 sm:px-6">
@@ -279,11 +255,6 @@
 					</button>
 				</div>
 				<div class="mt-3 space-y-1 px-2 sm:px-3">
-					<a
-						href="#"
-						class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
-						>Your Profile</a
-					>
 					<a
 						href="/settings/profile"
 						class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"

@@ -1,7 +1,11 @@
 <script lang="ts">
-	export let pledged: number;
-	export let goal: number | undefined;
-	let percentage = Math.min(goal != undefined ? Math.round((pledged / goal) * 100) : 100, 100);
+	import type currency from 'currency.js';
+	export let pledged: currency;
+	export let goal: currency | undefined;
+	let percentage = Math.min(
+		goal != undefined ? Math.round((pledged.value / goal.value) * 100) : 100,
+		100
+	);
 </script>
 
 <div
