@@ -29,7 +29,9 @@
 		data.likedCampaign = !data.likedCampaign;
 	};
 
-	const distributeFunds = async () => {};
+	const distributeFunds = async () => {
+		await trpc().campaigns.closeAndDistribute.mutate(data.campaign.id);
+	};
 </script>
 
 <Toast color="green" class="fixed right-5 top-5" bind:open={show}>

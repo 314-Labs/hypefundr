@@ -1,4 +1,9 @@
 module default {
+    scalar type currency extending decimal {
+        # currency values can have at most 2 decimal places
+        constraint expression on (__subject__ * 100n - math::floor(__subject__ * 100n) = 0);
+    }
+
     type Game {
         required property title -> str;
         required property igdb_id -> int64;
@@ -20,7 +25,7 @@ module default {
         property description -> str;
         required property slug -> str;
         property tagline-> str;
-        property goal-> decimal;
+        property goal-> currency;
         property ended-> bool;
         link game -> Game;
         link game_mode -> GameMode;
@@ -34,7 +39,7 @@ module default {
     type Pledge extending HasCreatedAt {
         required link campaign -> Campaign;
         required link user -> auth::User;
-        required property amount -> decimal {
+        required property amount -> currency {
             constraint min_value(1);
         }
     }
@@ -42,7 +47,7 @@ module default {
     type Payout extending HasCreatedAt {
         required link campaign -> Campaign;
         required link user -> auth::User;
-        required property amount -> decimal;
+        required property amount -> currency;
     }
 
     type UserLike extending HasCreatedAt {

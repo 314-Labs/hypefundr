@@ -3,7 +3,7 @@ import e from '$db';
 import { t } from '$lib/trpc/t';
 import { z } from 'zod';
 import { Game } from '$db/modules/default';
-
+import currency from 'currency.js';
 const getPledgedAmount = (campaignId: string) =>
 	e
 		.select(
@@ -135,8 +135,54 @@ export const campaigns = t.router({
 			})
 			.run(client)
 	),
+
 	cancelLikeCampaign: t.procedure.input(z.string()).mutation(({ input, ctx }) =>
 			e.delete(e.UserLike,(row) => ({
 				filter_single: e.op(e.op(row.campaign.id, '=', e.uuid(input)), 'and', e.op(row.user.email, '=', ctx.session!.user!.email!))
-			})).run(client))
+			})).run(client)),
+
+	closeAndDistribute: t.procedure.input(z.string()).mutation(async ({input, ctx}) => {
+
+		const res = await e.select(e.Campaign, (campaign) => ({
+			participants: {
+				id: true,
+			},
+			closed: true,
+
+			filter_single: {id: input}
+		})).run(client);
+		if(!res || res.closed) return;
+
+		const {participants} = res;
+
+		const funds = currency(await getPledgedAmount(input));
+		const splits = funds.distribute(participants.length); 
+
+		return client.transaction(async tx => {
+			for(const [i, participant] of participants.entries()) {
+				await e.insert(e.Payout, {
+					campaign: e.select(e.Campaign, (c) => ({
+						filter_single: {
+							id: input
+						}
+					})),
+					user: e.select(e.auth.User, (u) => ({
+						filter_single: {
+							id: participant.id
+						}
+					})),
+					amount: e.decimal(splits[i].toString()),
+
+					
+				}).run(tx);
+
+				await e.update(e.Campaign, c => ({
+					set: {
+						closed: true
+					},
+					filter_single: {id: input }
+				}));
+			}
+		});
+	})
 });
