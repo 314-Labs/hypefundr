@@ -211,8 +211,7 @@
 								value = items[highlightedIndex].text;
 								selectedIndex = highlightedIndex;
 								dispatch('select', {
-									id: items[selectedIndex].id,
-									text: items[selectedIndex].text
+									item: items[selectedIndex]
 								});
 							}
 							highlightedIndex = -1;
@@ -226,8 +225,7 @@
 								open = false;
 								selectedIndex = matchedIndex;
 								dispatch('select', {
-									id: items[selectedIndex].id,
-									text: items[selectedIndex].text
+									item: items[selectedIndex]
 								});
 
 								value = items[selectedIndex].text;
@@ -305,8 +303,7 @@
 							selectedIndex = i;
 							open = false;
 							dispatch('select', {
-								id: items[selectedIndex].id,
-								text: items[selectedIndex].text
+								item: items[selectedIndex]
 							});
 						}}
 						on:mouseenter={() => {

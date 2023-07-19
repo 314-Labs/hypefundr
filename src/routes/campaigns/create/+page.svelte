@@ -1,15 +1,19 @@
 <script lang="ts">
-	import Autocomplete from './autocomplete.svelte';
 	export let data;
 	import ComboBox from '$lib/components/ComboBox/ComboBox.svelte';
-	import { getAvatar, getGameCover } from '$lib/util';
+	import { getGameCover } from '$lib/util';
 	import Editor from '@tinymce/tinymce-svelte';
 	import { fade } from 'svelte/transition';
+	import { trpc } from '$lib/trpc/client';
+	import type { RouterInputs } from '$lib/trpc/router';
+	import { TRPCClientError } from '@trpc/client';
+
 	let gameId: number | undefined = undefined;
 
 	interface UserDisplayInfo {
+		image: string;
 		id: string;
-		username: string;
+		name: string;
 	}
 	let campaignUsers: UserDisplayInfo[] = [];
 
@@ -18,23 +22,14 @@
 	let descriptionText: string = '';
 	const fetchGames = async (title: string) => {
 		gameModeComboBox.clear();
-		const { data: gameResult, error } = await data.supabase
-			.from('games')
-			.select('id, title')
-			.ilike('title', `%${title}%`)
-			.limit(10);
+		let gameResult = await trpc().games.list.query(title);
 
-		if (error) {
-			console.error('Error searching games:', error);
-			return [];
-		} else {
-			return gameResult.map((game) => ({
-				id: game.id,
-				text: game.title,
-				cover: getGameCover(data.supabase, game.id),
-				disabled: false
-			}));
-		}
+		return gameResult.map((game) => ({
+			id: game.id,
+			text: game.title,
+			cover: getGameCover(game.id),
+			disabled: false
+		}));
 	};
 
 	const fetchGameModes = async (modeName: string) => {
@@ -59,22 +54,14 @@
 	};
 
 	const fetchUsers = async (username: string) => {
-		const { data: modeResult, error } = await data.supabase
-			.from('profiles')
-			.select('id, username')
-			.ilike('username', `%${username}%`)
-			.limit(10);
-
-		if (error) {
-			console.error('Error searching game modes:', error);
-			return [];
-		} else {
-			return modeResult.map((user) => ({
-				id: user.id,
-				text: user.username!,
-				disabled: false
-			}));
-		}
+		let users = await trpc().users.list.query(username);
+		return users.map((user) => ({
+			id: user.id,
+			text: user.name!,
+			name: user.name!,
+			image: user.image!,
+			disabled: false
+		}));
 	};
 </script>
 
@@ -102,15 +89,11 @@
 							class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
 						>
 							<div class="flex-shrink-0">
-								<img
-									class="h-10 w-10 rounded-full"
-									src={getAvatar(data.supabase, user.id)}
-									alt=""
-								/>
+								<img class="h-10 w-10 rounded-full" src={user.image} alt="" />
 							</div>
 							<div class="min-w-0 flex-1">
 								<div class="focus:outline-none">
-									<p class="text-sm font-medium text-gray-300">{user.username}</p>
+									<p class="text-sm font-medium text-gray-300">{user.name}</p>
 								</div>
 							</div>
 							<a href="/asdfszdf" target="_blank" class="ml-auto text-sm text-blue-400">Profile</a>
@@ -141,9 +124,9 @@
 						name="user-select"
 						placeholder="Select Campaign Users"
 						optionsFetcher={fetchUsers}
-						on:select={({ detail: { id, text } }) => {
-							const alreadyAdded = campaignUsers.find((x) => x.id == id) != undefined;
-							if (!alreadyAdded) campaignUsers = [...campaignUsers, { id: id, username: text }];
+						on:select={({ detail: { item } }) => {
+							const alreadyAdded = campaignUsers.find((x) => x.id == item.id) != undefined;
+							if (!alreadyAdded) campaignUsers = [...campaignUsers, item];
 						}}
 					/>
 				</div>

@@ -1,51 +1,36 @@
 <script lang="ts">
-	import { getAvatar, getGameCover } from '$lib/util';
-	import { supabase } from '@supabase/auth-ui-shared';
+	import { getGameCover } from '$lib/util';
 	import type { PageData } from './$types';
 	import { Button, Modal, Toast } from 'flowbite-svelte';
 	import GlowingPanel from './GlowingPanel.svelte';
-	import type { PostgrestError } from '@supabase/supabase-js';
+	import currency from 'currency.js';
+	import { trpc } from '$lib/trpc/client';
+
 	export let data: PageData;
 	let defaultModal = false;
-	let pledgeInputVal: number = 0;
+	let pledgeInputVal: string = '1.00';
 	let show = false;
+	$: pledgedCurrency = currency(data.pledgeAmount);
+	$: goalCurrency = currency(data.campaign.goal ?? 0);
 	const pledgeMoney = async () => {
-		const { error } = await data.supabase.from('pledges').insert({
+		data.pledgeAmount = await trpc().campaigns.pledge.mutate({
 			amount: pledgeInputVal,
-			user_id: data.session!.user.id,
-			campaign_id: data.campaign!.id
+			campaignId: data.campaign.id
 		});
-		if (error) {
-			console.log(error);
-		}
 		show = true;
 	};
 
 	const toggleLike = async () => {
-		let error: PostgrestError | null;
-		if (data.hasLiked) {
-			error = (
-				await data.supabase
-					.from('campaign_likes')
-					.delete()
-					.eq('campaign_id', data.campaign!.id)
-					.eq('user_id', data.session!.user.id)
-			).error;
+		if (!data.likedCampaign) {
+			await trpc().campaigns.likeCampaign.mutate(data.campaign.id);
 		} else {
-			error = (
-				await data.supabase.from('campaign_likes').insert({
-					campaign_id: data.campaign!.id,
-					user_id: data.session!.user.id
-				})
-			).error;
+			await trpc().campaigns.cancelLikeCampaign.mutate(data.campaign.id);
 		}
-		if (!error) {
-			data.hasLiked = !data.hasLiked;
-		}
+		data.likedCampaign = !data.likedCampaign;
 	};
 
 	const distributeFunds = async () => {
-		await data.supabase.rpc('distribute_campaign_funds', { campaign_id_input: data.campaign!.id });
+		await trpc().campaigns.closeAndDistribute.mutate(data.campaign.id);
 	};
 </script>
 
@@ -91,20 +76,20 @@
 	<div class="md:w-72 flex-grow md:flex-none space-y-4">
 		<div>
 			<img
-				src={getGameCover(data.supabase, data.campaign.game_id)}
+				src={getGameCover(data.campaign.game.id)}
 				alt="Eight shirts arranged on table in black, olive, grey, blue, white, red, mustard, and green."
 				class="w-full object-cover object-center rounded-sm"
 			/>
 			<h3 class="text-gray-300 text-xl mt-2 font-semibold">
-				{data.campaign.games.title}
+				{data.campaign.game.title}
 			</h3>
 			<p class="text-gray-500">Survival</p>
 		</div>
 
 		<hr class="w-full border-t border-gray-300" />
-		<GlowingPanel pledged={data.pledgeAmount} goal={data.campaign?.goal} />
+		<GlowingPanel pledged={pledgedCurrency} goal={goalCurrency} />
 		<div class="space-y-4">
-			{#if (!data.campaign.closed && data.campaign.goal != null && data.campaign.goal <= data.pledgeAmount) || (data.campaign.goal == null && data.pledgeAmount > 0)}
+			{#if (!data.campaign.closed && data.campaign.goal != null && goalCurrency.intValue <= pledgedCurrency.intValue) || (data.campaign.goal == null && pledgedCurrency.intValue > 0)}
 				<Button
 					on:click={distributeFunds}
 					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
@@ -121,12 +106,12 @@
 			<Button
 				on:click={toggleLike}
 				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-				>{#if data.hasLiked} Liked {:else} Like {/if}</Button
+				>{#if data.likedCampaign} Liked {:else} Like {/if}</Button
 			>
 		</div>
 	</div>
 	<div class="flex-grow text-slate-400">
-		{#if data.participants}
+		{#if data.campaign.participants}
 			<div class="flex flex-wrap w-full">
 				<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
 					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">
@@ -136,21 +121,21 @@
 				</div>
 			</div>
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
-				{#each data.participants as participant}
+				{#each data.campaign.participants as participant}
 					<div
 						class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
 					>
 						<div class="flex-shrink-0">
 							<img
 								class="h-10 w-10 rounded-full"
-								src={getAvatar(data.supabase, participant.user_id)}
-								alt=""
+								src={participant.image}
+								alt={`${participant.name} avatar`}
 							/>
 						</div>
 						<div class="min-w-0 flex-1">
 							<a href="#" class="focus:outline-none">
 								<span class="absolute inset-0" aria-hidden="true" />
-								<p class="text-sm font-medium text-gray-300">{participant.profiles.username}</p>
+								<p class="text-sm font-medium text-gray-300">{participant.name}</p>
 							</a>
 						</div>
 					</div>

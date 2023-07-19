@@ -1,9 +1,15 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "./database.types";
+import BunnyClient from './bunny';
 
-export const getGameCover = (supabase: SupabaseClient<Database>, id: number) =>
-    supabase.storage.from('games').getPublicUrl(`images/${id}/cover.jpg`).data.publicUrl;
+import {
+	PUBLIC_BUNNY_API_KEY,
+	PUBLIC_BUNNY_CDN_HOSTNAME,
+	PUBLIC_BUNNY_STORAGE_ZONE
+} from '$env/static/public';
 
-export const getAvatar = (supabase: SupabaseClient<Database>, userId: string) => {
-    return supabase.storage.from('avatars').getPublicUrl(`${userId}/avatar`).data.publicUrl;
-}
+const bunny = new BunnyClient(
+	PUBLIC_BUNNY_API_KEY,
+	PUBLIC_BUNNY_STORAGE_ZONE,
+	PUBLIC_BUNNY_CDN_HOSTNAME
+);
+
+export const getGameCover = (id: string) => bunny.getUrl(`images/${id}/cover.jpg`);
