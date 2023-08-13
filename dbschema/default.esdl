@@ -26,22 +26,46 @@ module default {
         required slug: str;
         tagline: str;
         goal: currency;
-        ended: bool;
         game: Game;
         game_mode: GameMode;
         required creator: auth::User;
-        required participants: auth::User;
+        required multi participants: auth::User;
         required closed: bool {
             default := false;
         }
+        required pledged_tentative: currency {
+            default := 0;
+        }
+        required pledged_captured: currency {
+            default := 0;
+        }
     }
 
-    type Pledge extending HasCreatedAt {
+    type TentativePledge extending HasCreatedAt {
         required campaign: Campaign;
         required user: auth::User;
         required amount: currency {
             constraint min_value(1);
         }
+
+        trigger add_pledged_tentative after insert for each do (
+            update Campaign filter .id = __new__.campaign.id
+            set {
+                pledged_tentative := .pledged_tentative + __new__.amount
+            }
+        );
+    }
+
+    type CapturedPledge extending HasCreatedAt {
+        # The original tentative pledge that we captured
+        required tentative_pledge: TentativePledge;
+
+        trigger add_pledged_captured after insert for each do (
+        update Campaign filter .id = __new__.tentative_pledge.campaign.id
+            set {
+                pledged_captured := .pledged_captured + __new__.tentative_pledge.amount
+            }
+        );
     }
 
     type Payout extending HasCreatedAt {
