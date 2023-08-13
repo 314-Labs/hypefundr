@@ -5,54 +5,54 @@ module default {
     }
 
     type Game {
-        required property title -> str;
-        required property igdb_id -> int64;
+        required title: str;
+        # id for querying https://www.igdb.com/
+        required igdb_id: int64;
     }
-
     type GameMode {
-        required property name -> str;
+        required name: str;
     }
    
     abstract type HasCreatedAt {
-        required property created_at -> datetime {
+        required created_at: datetime {
             readonly := true;
             default := datetime_of_statement();
         }
     }
 
     type Campaign extending HasCreatedAt {
-        required property title -> str;
-        property description -> str;
-        required property slug -> str;
-        property tagline-> str;
-        property goal-> currency;
-        property ended-> bool;
-        link game -> Game;
-        link game_mode -> GameMode;
-        required link creator -> auth::User;
-        required multi link participants -> auth::User;
-        required property closed -> bool {
+        required title: str;
+        description: str;
+        required slug: str;
+        tagline: str;
+        goal: currency;
+        ended: bool;
+        game: Game;
+        game_mode: GameMode;
+        required creator: auth::User;
+        required participants: auth::User;
+        required closed: bool {
             default := false;
         }
     }
 
     type Pledge extending HasCreatedAt {
-        required link campaign -> Campaign;
-        required link user -> auth::User;
-        required property amount -> currency {
+        required campaign: Campaign;
+        required user: auth::User;
+        required amount: currency {
             constraint min_value(1);
         }
     }
 
     type Payout extending HasCreatedAt {
-        required link campaign -> Campaign;
-        required link user -> auth::User;
-        required property amount -> currency;
+        required campaign: Campaign;
+        required user: auth::User;
+        required amount: currency;
     }
 
     type UserLike extending HasCreatedAt {
-        required link user -> auth::User;
-        required link campaign -> Campaign;
+        required user: auth::User;
+        required campaign: Campaign;
         constraint exclusive on ((.user, .campaign));
     }
 }
