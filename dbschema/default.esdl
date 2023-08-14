@@ -5,54 +5,78 @@ module default {
     }
 
     type Game {
-        required property title -> str;
-        required property igdb_id -> int64;
+        required title: str;
+        # id for querying https://www.igdb.com/
+        required igdb_id: int64;
     }
-
     type GameMode {
-        required property name -> str;
+        required name: str;
     }
    
     abstract type HasCreatedAt {
-        required property created_at -> datetime {
+        required created_at: datetime {
             readonly := true;
             default := datetime_of_statement();
         }
     }
 
     type Campaign extending HasCreatedAt {
-        required property title -> str;
-        property description -> str;
-        required property slug -> str;
-        property tagline-> str;
-        property goal-> currency;
-        property ended-> bool;
-        link game -> Game;
-        link game_mode -> GameMode;
-        required link creator -> auth::User;
-        required multi link participants -> auth::User;
-        required property closed -> bool {
+        required title: str;
+        description: str;
+        required slug: str;
+        tagline: str;
+        goal: currency;
+        game: Game;
+        game_mode: GameMode;
+        required creator: auth::User;
+        required multi participants: auth::User;
+        required closed: bool {
             default := false;
+        }
+        required pledged_tentative: currency {
+            default := 0;
+        }
+        required pledged_captured: currency {
+            default := 0;
         }
     }
 
-    type Pledge extending HasCreatedAt {
-        required link campaign -> Campaign;
-        required link user -> auth::User;
-        required property amount -> currency {
+    type TentativePledge extending HasCreatedAt {
+        required campaign: Campaign;
+        required user: auth::User;
+        required amount: currency {
             constraint min_value(1);
         }
+
+        trigger add_pledged_tentative after insert for each do (
+            update Campaign filter .id = __new__.campaign.id
+            set {
+                pledged_tentative := .pledged_tentative + __new__.amount
+            }
+        );
+    }
+
+    type CapturedPledge extending HasCreatedAt {
+        # The original tentative pledge that we captured
+        required tentative_pledge: TentativePledge;
+
+        trigger add_pledged_captured after insert for each do (
+        update Campaign filter .id = __new__.tentative_pledge.campaign.id
+            set {
+                pledged_captured := .pledged_captured + __new__.tentative_pledge.amount
+            }
+        );
     }
 
     type Payout extending HasCreatedAt {
-        required link campaign -> Campaign;
-        required link user -> auth::User;
-        required property amount -> currency;
+        required campaign: Campaign;
+        required user: auth::User;
+        required amount: currency;
     }
 
     type UserLike extending HasCreatedAt {
-        required link user -> auth::User;
-        required link campaign -> Campaign;
+        required user: auth::User;
+        required campaign: Campaign;
         constraint exclusive on ((.user, .campaign));
     }
 }
