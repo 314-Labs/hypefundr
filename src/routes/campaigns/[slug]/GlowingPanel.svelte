@@ -1,11 +1,8 @@
 <script lang="ts">
 	import type currency from 'currency.js';
-	export let pledged: currency;
-	export let goal: currency | undefined;
-	let percentage = Math.min(
-		goal != undefined ? Math.round((pledged.value / goal.value) * 100) : 100,
-		100
-	);
+	export let pledged: number;
+	export let goal: number | null;
+	let percentage = Math.min(goal != undefined ? Math.round((pledged / goal) * 100) : 100, 100);
 </script>
 
 <div
@@ -17,9 +14,9 @@
 		class="shadow-none whitespace-nowrap text-white bg-emerald-500 bg-opacity-40 hover:bg-opacity-50"
 	>
 		<div class="ml-2 p-2 flex flex-col justify-center h-full">
-			<span class="text-2xl font-bold">${pledged}</span>
+			<span class="text-2xl font-bold">{pledged}</span>
 			<span class="opacity-80">
-				pledged {#if goal != undefined} of ${goal} goal {/if}</span
+				pledged {#if goal != undefined} of {goal} goal {/if}</span
 			>
 		</div>
 	</div>

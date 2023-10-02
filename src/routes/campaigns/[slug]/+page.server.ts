@@ -19,8 +19,6 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404);
 	}
 
-	const pledgeAmount = await caller.campaigns.getPledgedAmount(campaign.id);
-	
 	const session = await getSession();
 	let likedCampaign = false;
 
@@ -28,7 +26,7 @@ export const load: PageServerLoad = async (event) => {
 		const likeRowCount = await e
 			.select(
 				e.count(
-					e.select(e.UserLike, (row) => ({
+					e.select(e.UserUpvote, (row) => ({
 						filter_single: e.op(
 							e.op(row.campaign.id, '=', e.uuid(campaign.id)),
 							'and',
@@ -39,7 +37,7 @@ export const load: PageServerLoad = async (event) => {
 			)
 			.run(client);
 		likedCampaign = likeRowCount == 1;
+		console.log(session);
 	}
-
-	return { campaign, pledgeAmount, likedCampaign };
+	return { campaign, likedCampaign, slug };
 };

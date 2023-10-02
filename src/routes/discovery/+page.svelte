@@ -2,7 +2,6 @@
 	import { getGameCover } from '$lib/util.js';
 
 	export let data;
-	$: ({ session } = data);
 </script>
 
 <section class="text-gray-600 body-font">

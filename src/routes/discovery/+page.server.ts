@@ -5,5 +5,6 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
 	const campaigns = await router.createCaller(await createContext(event)).campaigns.list();
+	const session = await event.locals.getSession();
 	return { campaigns }
 };

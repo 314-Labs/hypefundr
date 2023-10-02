@@ -1,5 +1,5 @@
 module auth {
-    type User {
+    type User extending default::HasBillingAccount {
         property name -> str;
         required property email -> str {
             constraint exclusive;
@@ -11,6 +11,12 @@ module auth {
         property createdAt -> datetime {
             default := datetime_current();
         };
+
+        overloaded billing_account: default::BillingAccount {
+            rewrite insert using (insert default::BillingAccount{
+                name := __subject__.email
+            })
+        }
     }
 
     type Account {

@@ -12,7 +12,23 @@ import { createContext } from '$lib/trpc/context';
 export const handle = sequence(
 	SvelteKitAuth({
 		adapter: EdgeDBAdapter(client),
-		providers: [Twitch({ clientId: TWITCH_CLIENT_ID, clientSecret: TWITCH_CLIENT_SECRET })]
+		providers: [Twitch({ clientId: TWITCH_CLIENT_ID, clientSecret: TWITCH_CLIENT_SECRET })],
+		session: {
+			strategy: "jwt"
+		},
+		callbacks: {
+			async jwt({ token, account, user }) {
+				if (account) {
+
+					token.userId = user.id;
+				}
+				return token;
+			},
+			async session({ session, token }) {
+				session.user.id = token.userId
+				return session;
+			}
+		}
 	}),
 	createTRPCHandle({ router, createContext })
 );
