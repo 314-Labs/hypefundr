@@ -1,4 +1,4 @@
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 import e from '$db';
 import { t } from '$lib/trpc/t';
 import { z } from 'zod';

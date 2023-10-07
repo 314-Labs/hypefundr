@@ -1,19 +1,11 @@
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 import e from '$db';
 import { t } from '$lib/trpc/t';
 import { z } from 'zod';
 import { Game } from '$db/modules/default';
-import currency from 'currency.js';
-const getPledgedAmount = (campaignId: string) =>
-	e
-		.select(
-			e.sum(
-				e.select(e.Pledge, (pledge) => ({
-					filter: e.op(pledge.campaign.id, '=', e.uuid(campaignId))
-				})).amount
-			)
-		)
-		.run(client);
+import { TRPCError } from '@trpc/server';
+import { auth } from '../middleware/auth';
+import { insertCreditTransaction } from '$lib/credits';
 
 export const campaigns = t.router({
 	list: t.procedure.query(() =>
@@ -48,11 +40,16 @@ export const campaigns = t.router({
 					id: true,
 					title: true
 				},
+				billing_account: {
+					balance: true
+				},
+				upvote_count: true,
 				filter_single: e.op(campaign.slug, '=', input)
 			}))
 			.run(client)
 	),
 	createCampaign: t.procedure
+		.use(auth)
 		.input(
 			z.object({
 				title: z.string(),
@@ -63,8 +60,10 @@ export const campaigns = t.router({
 			})
 		)
 		.mutation(({ input, ctx }) => {
+			if (!ctx.session?.user) {
+				throw new TRPCError({ code: 'UNAUTHORIZED' });
+			}
 			const slug = input.title.trim().toLowerCase().replaceAll(' ', '-');
-
 			const query = e.params(
 				{
 					participantIds: e.array(e.uuid)
@@ -80,109 +79,165 @@ export const campaigns = t.router({
 								id: input.gameId
 							}
 						})),
-						creator: e.select(e.auth.User, (user) => ({
+						creator: e.select(e.User, (user) => ({
 							filter_single: {
-								email: ctx.session!.user!.email!
+								id: ctx.session!.user.id
 							}
 						})),
-						participants: e.select(e.auth.User, (user) => ({
+						participants: e.select(e.User, (user) => ({
 							filter: e.op(user.id, 'in', e.array_unpack(params.participantIds))
 						}))
 					})
 			);
 			return query.run(client, { participantIds: input.userIds });
 		}),
-
-	getPledgedAmount: t.procedure.input(z.string()).query(({ input }) => getPledgedAmount(input)),
 	pledge: t.procedure
-		.input(
-			z.object({
-				amount: z.string(),
-				campaignId: z.string()
-			})
-		)
-		.mutation(async ({ input, ctx }) => {
-			await e
-				.insert(e.Pledge, {
-					amount: e.decimal(input.amount),
-					user: e.select(e.auth.User, (user) => ({
-						filter_single: {
-							email: ctx.session!.user!.email!
-						}
-					})),
-					campaign: e.select(e.Campaign, (user) => ({
-						filter_single: {
-							id: input.campaignId
-						}
-					}))
+		.use(auth)
+		.input(z.object({
+			campaignId: z.string(),
+			numCredits: z.number()
+		})).mutation(async ({ input: { campaignId, numCredits }, ctx: { session } }) => {
+
+			const campaignQuery = e.select(e.Campaign, campaign => ({ filter_single: { id: campaignId } }));
+			const userQuery = e.select(e.User, user => ({ filter_single: { id: session!.user.id } }))
+
+			await client.transaction(async tx => {
+
+				const updateCampaignBalance = e.update(e.BillingAccount, ba => ({
+					set: {
+						balance: e.op(ba.balance, '+', numCredits)
+					},
+					filter_single: { id: campaignQuery.billing_account.id }
+				}));
+
+				const updateUserBalance = e.update(e.BillingAccount, ba => ({
+					set: {
+						balance: e.op(ba.balance, '-', numCredits)
+					},
+					filter_single: { id: userQuery.billing_account.id }
+				}));
+
+				const campaignPosting = e.insert(e.Posting, {
+					amount: numCredits,
+					account: campaignQuery.billing_account
+				});
+
+				const userPosting = e.insert(e.Posting, {
+					amount: -numCredits,
+					account: userQuery.billing_account
+				});
+
+				const creditTransaction = e.insert(e.CreditTransaction, {
+					notes: "Campaign pledge",
+					postings: e.set(campaignPosting, userPosting)
+				});
+
+				const insertPledge = e.insert(e.Pledge, {
+					campaign: campaignQuery,
+					user: userQuery,
+					credit_transaction: creditTransaction,
+					num_credits: numCredits
 				})
-				.run(client);
-			return getPledgedAmount(input.campaignId);
+				await updateCampaignBalance.run(tx);
+				await updateUserBalance.run(tx);
+				await insertPledge.run(tx);
+
+			})
+
 		}),
-	likeCampaign: t.procedure.input(z.string()).mutation(({ input, ctx }) =>
-		e
-			.insert(e.UserLike, {
+
+	upvote: t.procedure.use(auth).input(z.string()).mutation(({ input, ctx }) => {
+		return e
+			.insert(e.UserUpvote, {
 				campaign: e.select(e.Campaign, (campaign) => ({
 					filter_single: {
 						id: input
 					}
 				})),
-				user: e.select(e.auth.User, (user) => ({
+				user: e.select(e.User, (user) => ({
 					filter_single: {
-						email: ctx.session?.user!.email!
+						id: ctx.session!.user.id
 					}
 				}))
 			})
 			.run(client)
-	),
+	}),
 
-	cancelLikeCampaign: t.procedure.input(z.string()).mutation(({ input, ctx }) =>
-			e.delete(e.UserLike,(row) => ({
-				filter_single: e.op(e.op(row.campaign.id, '=', e.uuid(input)), 'and', e.op(row.user.email, '=', ctx.session!.user!.email!))
-			})).run(client)),
+	removeUpvote: t.procedure.use(auth).input(z.string()).mutation(({ input, ctx }) =>
+		e.delete(e.UserUpvote, (row) => ({
+			filter_single: e.op(e.op(row.campaign.id, '=', e.uuid(input)), 'and', e.op(row.user.id, '=', e.uuid(ctx.session!.user.id)))
+		})).run(client)),
 
-	closeAndDistribute: t.procedure.input(z.string()).mutation(async ({input, ctx}) => {
+	closeAndDistribute: t.procedure.use(auth).input(z.string()).mutation(async ({ input, ctx }) => {
+		client.transaction(async tx => {
 
-		const res = await e.select(e.Campaign, (campaign) => ({
-			participants: {
+			/**
+			 * steps:
+			 * 1. close campaign
+			 * 2. calculate payouts and insert postings + transaction for payouts and the withdrawal of all campaign credits
+			 * 3. update account balances
+			 * 4. insert Payout rows
+			 */
+			const campaign = await e.select(e.Campaign, c => ({
 				id: true,
-			},
-			closed: true,
+				filter_single: { id: input },
+				billing_account: {
+					id: true,
+					balance: true
+				},
+				participants: {
+					id: true,
+					billing_account: {
+						id: true,
+						balance: true
+					}
+				}
+			})).run(tx);
 
-			filter_single: {id: input}
-		})).run(client);
-		if(!res || res.closed) return;
+			if (!campaign) throw new TRPCError({ code: 'NOT_FOUND' });
 
-		const {participants} = res;
+			// Step 1: close campaign
+			await e.update(e.Campaign, c => ({
+				set: {
+					closed: true
+				},
+				filter_single: {
+					id: input
+				}
+			})).run(tx);
 
-		const funds = currency(await getPledgedAmount(input));
-		const splits = funds.distribute(participants.length); 
 
-		return client.transaction(async tx => {
-			for(const [i, participant] of participants.entries()) {
-				await e.insert(e.Payout, {
-					campaign: e.select(e.Campaign, (c) => ({
-						filter_single: {
-							id: input
-						}
-					})),
-					user: e.select(e.auth.User, (u) => ({
-						filter_single: {
-							id: participant.id
-						}
-					})),
-					amount: e.decimal(splits[i].toString()),
 
-					
-				}).run(tx);
-
-				await e.update(e.Campaign, c => ({
-					set: {
-						closed: true
-					},
-					filter_single: {id: input }
-				}));
+			// step 2: calculate payouts and insert postings + transaction for payouts and the withdrawal of all campaign credits
+			// calculate the split between the different participants
+			const payouts: number[] = Array(campaign.participants.length).fill(Math.floor(campaign.billing_account.balance / campaign.participants.length));
+			for (let i = 0; i < campaign.billing_account.balance % campaign.participants.length; i++) {
+				payouts[i]++;
 			}
+
+			const amountAccountTuples = payouts.map((x, i) => ({ amount: x, accountId: campaign.participants[i].billing_account.id }));
+			const amountUserTuples = payouts.map((x, i) => ({ amount: x, userId: campaign.participants[i].id }));
+
+
+			// add the posting where we withdraw all credits from the campaing account
+			amountAccountTuples.push({ amount: -campaign.billing_account.balance, accountId: campaign.billing_account.id });
+
+			const insertedTransacId = await insertCreditTransaction(amountAccountTuples, tx);
+
+			// step 4: insert Payout rows
+
+			const insertPayoutRows = e.params({ userAmounts: e.array(e.tuple({ amount: e.int64, userId: e.uuid })) }, (params) => {
+				return e.for(e.array_unpack(params.userAmounts), (item) => {
+					return e.insert(e.Payout, {
+						user: e.select(e.User, u => ({ filter_single: { id: item.userId } })),
+						num_credits: item.amount,
+						campaign: e.select(e.Campaign, c => ({ filter_single: { id: campaign.id } })),
+						credit_transaction: e.select(e.CreditTransaction, ct => ({ filter_single: { id: insertedTransacId } }))
+					});
+				});
+			});
+
+			await insertPayoutRows.run(tx, { userAmounts: amountUserTuples });
 		});
 	})
-});
+})

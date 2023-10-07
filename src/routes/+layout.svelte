@@ -1,23 +1,9 @@
 <script lang="ts">
 	import '../app.css';
-	import { invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Transition from 'svelte-transition';
-	import {
-		Navbar,
-		NavBrand,
-		NavLi,
-		NavUl,
-		NavHamburger,
-		Avatar,
-		Dropdown,
-		DropdownItem,
-		DropdownHeader,
-		DropdownDivider,
-		Button
-	} from 'flowbite-svelte';
+
 	import { page } from '$app/stores';
-	export let data;
 	let showDropdown = false;
 </script>
 
@@ -189,7 +175,7 @@
 											id="user-menu-item-1">Settings</a
 										>
 										<a
-											href="#"
+											href="/auth/signout"
 											class="block px-4 py-2 text-sm text-gray-700"
 											role="menuitem"
 											tabindex="-1"
@@ -261,7 +247,7 @@
 						>Settings</a
 					>
 					<a
-						href="#"
+						href="/auth/signout"
 						class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
 						>Sign out</a
 					>

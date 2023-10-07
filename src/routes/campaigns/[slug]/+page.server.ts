@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 import { router } from '$lib/trpc/router';
 import { createContext } from '$lib/trpc/context';
 import e from '$db';
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 export const load: PageServerLoad = async (event) => {
 	const {
 		params: { slug },
@@ -19,8 +19,6 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404);
 	}
 
-	const pledgeAmount = await caller.campaigns.getPledgedAmount(campaign.id);
-	
 	const session = await getSession();
 	let likedCampaign = false;
 
@@ -28,18 +26,18 @@ export const load: PageServerLoad = async (event) => {
 		const likeRowCount = await e
 			.select(
 				e.count(
-					e.select(e.UserLike, (row) => ({
+					e.select(e.UserUpvote, (row) => ({
 						filter_single: e.op(
 							e.op(row.campaign.id, '=', e.uuid(campaign.id)),
 							'and',
-							e.op(row.user.email, '=', session.user?.email!)
+							e.op(row.user.id, '=', e.uuid(session.user.id))
 						)
 					}))
 				)
 			)
 			.run(client);
 		likedCampaign = likeRowCount == 1;
+		console.log(session);
 	}
-
-	return { campaign, pledgeAmount, likedCampaign };
+	return { campaign, likedCampaign, slug };
 };

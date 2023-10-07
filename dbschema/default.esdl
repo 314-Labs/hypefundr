@@ -1,8 +1,4 @@
 module default {
-    scalar type currency extending decimal {
-        # currency values can have at most 2 decimal places
-        constraint expression on (__subject__ * 100n - math::floor(__subject__ * 100n) = 0);
-    }
 
     type Game {
         required title: str;
@@ -20,63 +16,117 @@ module default {
         }
     }
 
-    type Campaign extending HasCreatedAt {
+    type Campaign extending HasCreatedAt, HasBillingAccount {
         required title: str;
         description: str;
         required slug: str;
         tagline: str;
-        goal: currency;
-        game: Game;
+        goal: int64;
+        required game: Game;
         game_mode: GameMode;
-        required creator: auth::User;
-        required multi participants: auth::User;
+        required creator: User;
+        required multi participants: User;
         required closed: bool {
             default := false;
         }
-        required pledged_tentative: currency {
+        required credits_pledged: int64 {
             default := 0;
         }
-        required pledged_captured: currency {
+        required upvote_count: int64 {
             default := 0;
+        }
+        overloaded billing_account: BillingAccount {
+            rewrite insert using (insert BillingAccount{
+                name := __subject__.title
+            })
         }
     }
 
-    type TentativePledge extending HasCreatedAt {
+    type Pledge extending HasCreatedAt {
         required campaign: Campaign;
-        required user: auth::User;
-        required amount: currency {
+        required user: User;
+        required num_credits: int64 {
             constraint min_value(1);
         }
-
-        trigger add_pledged_tentative after insert for each do (
-            update Campaign filter .id = __new__.campaign.id
-            set {
-                pledged_tentative := .pledged_tentative + __new__.amount
-            }
-        );
-    }
-
-    type CapturedPledge extending HasCreatedAt {
-        # The original tentative pledge that we captured
-        required tentative_pledge: TentativePledge;
-
-        trigger add_pledged_captured after insert for each do (
-        update Campaign filter .id = __new__.tentative_pledge.campaign.id
-            set {
-                pledged_captured := .pledged_captured + __new__.tentative_pledge.amount
-            }
-        );
+        required credit_transaction: CreditTransaction;
     }
 
     type Payout extending HasCreatedAt {
         required campaign: Campaign;
-        required user: auth::User;
-        required amount: currency;
+        required user: User;
+        required num_credits: int64;
+        required credit_transaction: CreditTransaction;
     }
 
-    type UserLike extending HasCreatedAt {
-        required user: auth::User;
+    type UserUpvote extending HasCreatedAt {
+        required user: User;
         required campaign: Campaign;
         constraint exclusive on ((.user, .campaign));
+
+        trigger add_upvote after insert for each do (
+            update Campaign filter .id = __new__.campaign.id
+            set {
+                upvote_count := .upvote_count + 1
+            }
+        );
+        trigger remove_upvote after delete for each do (
+            update Campaign filter .id = __old__.campaign.id
+            set {
+                upvote_count := .upvote_count - 1
+            }
+        );
+    }
+    Scalar type SpecialAccount extending enum<
+        StripeCheckout, # credit source when users purchase credits using stripe checkout
+        StripeConnect   # credit sink when users withdraw credits using stripe connect
+        >; 
+    
+    type BillingAccount {
+        required name: str;
+        special_account_type: SpecialAccount;
+        required balance: int64 {
+            default := 0
+        }
+        required can_go_negative: bool {
+            default := false;
+        }
+         constraint expression on (
+            .can_go_negative or .balance >= 0
+        );
+    }
+
+    type CreditTransaction extending HasCreatedAt{
+        notes: str;
+        required multi postings: Posting {
+            constraint exclusive;
+        }
+    }
+
+    type Posting {
+        required amount: int64;
+        required account: BillingAccount;
+        single link credit_transaction := .<postings[is CreditTransaction];
+    }
+
+    abstract type HasBillingAccount {
+        required billing_account: BillingAccount {
+            default := (insert BillingAccount {
+                name := "Billing Account"
+            });
+        }
+    }
+
+    type CreditPurchase extending HasCreatedAt {
+        required user: User;
+        required fiat_paid: int64;
+        required num_credits: int64;
+        required credit_transaction: CreditTransaction;
+    }
+
+    type CreditWithdrawal extending HasCreatedAt {
+        required user: User;
+        required num_credits: int64;
+        required credit_transaction: CreditTransaction;
+        required fiat_earned: int64;
     }
 }

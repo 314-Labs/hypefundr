@@ -1,7 +1,6 @@
 <script lang="ts">
 	export let data;
 	import ComboBox from '$lib/components/ComboBox/ComboBox.svelte';
-	import { getGameCover } from '$lib/util';
 	import Editor from '@tinymce/tinymce-svelte';
 	import { fade } from 'svelte/transition';
 	import { trpc } from '$lib/trpc/client';
@@ -27,30 +26,13 @@
 		return gameResult.map((game) => ({
 			id: game.id,
 			text: game.title,
-			cover: getGameCover(game.id),
+			cover: 'TODO: Add actual game poster',
 			disabled: false
 		}));
 	};
 
 	const fetchGameModes = async (modeName: string) => {
-		if (gameId == undefined) return [];
-		const { data: modeResult, error } = await data.supabase
-			.from('game_modes')
-			.select('id, mode')
-			.ilike('mode', `%${modeName}%`)
-			.eq('game_id', gameId)
-			.limit(10);
-
-		if (error) {
-			console.error('Error searching game modes:', error);
-			return [];
-		} else {
-			return modeResult.map((gameMode) => ({
-				id: gameMode.id,
-				text: gameMode.mode,
-				disabled: false
-			}));
-		}
+		return []; // Ts
 	};
 
 	const fetchUsers = async (username: string) => {
@@ -67,7 +49,7 @@
 
 <section class="">
 	<div class="py-8 px-4 mx-auto lg:max-w-7xl lg:py-16">
-		<h2 class="mb-4 text-xl font-bold text-gray-900 text-white">Create a new campaign</h2>
+		<h2 class="mb-4 text-xl font-bold text-gray-900">Create a new campaign</h2>
 		<form method="post">
 			<div class="grid gap-4 sm:grid-cols-2 sm:gap-6">
 				<div class="sm:col-span-2">
@@ -76,7 +58,7 @@
 						type="text"
 						name="title"
 						id="title"
-						class="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+						class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
 						placeholder="Type campaign name"
 						required
 					/>
@@ -102,7 +84,7 @@
 									campaignUsers = campaignUsers.filter((x) => x.id != user.id);
 								}}
 								type="button"
-								class="rounded-full bg-indigo-700/75 p-1 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
+								class="rounded-full bg-indigo-700/75 p-1 shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -168,7 +150,7 @@
 					<textarea
 						name="tagline"
 						id="tagline"
-						class="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+						class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
 					/>
 				</div>
 				<div class="sm:col-span-2">
@@ -185,7 +167,7 @@
 			</div>
 			<button
 				type="submit"
-				class=" px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-primary-700 focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800 w-full"
+				class=" px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center bg-primary-700 focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800 w-full"
 			>
 				Create Campaign
 			</button>

@@ -1,73 +1,55 @@
 <script lang="ts">
-	import { getGameCover } from '$lib/util';
 	import type { PageData } from './$types';
 	import { Button, Modal, Toast } from 'flowbite-svelte';
 	import GlowingPanel from './GlowingPanel.svelte';
-	import currency from 'currency.js';
 	import { trpc } from '$lib/trpc/client';
+	import { goto } from '$app/navigation';
+	import { createDialog } from 'svelte-headlessui';
+	import Transition from 'svelte-transition';
 
+	const successDialog = createDialog({ label: 'Payment Success' });
+	const pledgeDialog = createDialog({ label: 'Pledge Your Credits' });
 	export let data: PageData;
-	let defaultModal = false;
-	let pledgeInputVal: string = '1.00';
-	let show = false;
-	$: pledgedCurrency = currency(data.pledgeAmount);
-	$: goalCurrency = currency(data.campaign.goal ?? 0);
-	const pledgeMoney = async () => {
-		data.pledgeAmount = await trpc().campaigns.pledge.mutate({
-			amount: pledgeInputVal,
-			campaignId: data.campaign.id
-		});
-		show = true;
-	};
+	$: campaign = data.campaign;
+	let pledgeInputVal = '';
 
 	const toggleLike = async () => {
 		if (!data.likedCampaign) {
-			await trpc().campaigns.likeCampaign.mutate(data.campaign.id);
+			await trpc().campaigns.upvote.mutate(campaign.id);
+			campaign.upvote_count++;
 		} else {
-			await trpc().campaigns.cancelLikeCampaign.mutate(data.campaign.id);
+			await trpc().campaigns.removeUpvote.mutate(campaign.id);
+			campaign.upvote_count--;
 		}
 		data.likedCampaign = !data.likedCampaign;
 	};
 
 	const distributeFunds = async () => {
-		await trpc().campaigns.closeAndDistribute.mutate(data.campaign.id);
+		await trpc().campaigns.closeAndDistribute.mutate(campaign.id);
+	};
+
+	const pledge = async (inputVal: string) => {
+		const numCredits = parseInt(inputVal);
+		if (!numCredits || numCredits < 1) return;
+		await trpc().campaigns.pledge.mutate({ campaignId: campaign.id, numCredits });
 	};
 </script>
-
-<Toast color="green" class="fixed right-5 top-5" bind:open={show}>
-	<svelte:fragment slot="icon">
-		<svg
-			aria-hidden="true"
-			class="w-5 h-5"
-			fill="currentColor"
-			viewBox="0 0 20 20"
-			xmlns="http://www.w3.org/2000/svg"
-			><path
-				fill-rule="evenodd"
-				d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-				clip-rule="evenodd"
-			/></svg
-		>
-		<span class="sr-only">Check icon</span>
-	</svelte:fragment>
-	Pledge succeeded.
-</Toast>
 
 <div class="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700">
 	<div class="max-w-lg py-16 text-center mx-auto">
 		<h1 class="text-3xl font-semibold text-white lg:text-4xl">
-			{data.campaign?.title}
+			{campaign.title}
 		</h1>
 		{#if data.campaign?.tagline}
 			<p class="mt-6 text-slate-300 italic">
-				{data.campaign?.tagline}
+				{campaign.tagline}
 			</p>
 		{/if}
 	</div>
 </div>
-{#if data.campaign.closed}
+{#if campaign.closed}
 	<div class=" bg-blue-800 px-6 py-2.5 text-center">
-		<p class="text-sm leading-6 text-white/80">This campaign has already ended.</p>
+		<p class="tex-sm leading-6 text-white/80">This campaign has already ended.</p>
 	</div>
 {/if}
 <div
@@ -75,11 +57,7 @@
 >
 	<div class="md:w-72 flex-grow md:flex-none space-y-4">
 		<div>
-			<img
-				src={getGameCover(data.campaign.game.id)}
-				alt="Eight shirts arranged on table in black, olive, grey, blue, white, red, mustard, and green."
-				class="w-full object-cover object-center rounded-sm"
-			/>
+			<img src="" alt="Game cover art" class="w-full object-cover object-center rounded-sm" />
 			<h3 class="text-gray-300 text-xl mt-2 font-semibold">
 				{data.campaign.game.title}
 			</h3>
@@ -87,9 +65,9 @@
 		</div>
 
 		<hr class="w-full border-t border-gray-300" />
-		<GlowingPanel pledged={pledgedCurrency} goal={goalCurrency} />
+		<GlowingPanel pledged={campaign.billing_account.balance} goal={campaign.goal} />
 		<div class="space-y-4">
-			{#if (!data.campaign.closed && data.campaign.goal != null && goalCurrency.intValue <= pledgedCurrency.intValue) || (data.campaign.goal == null && pledgedCurrency.intValue > 0)}
+			{#if (!campaign.closed && campaign.goal != null && campaign.goal <= data.campaign.billing_account.balance) || (data.campaign.goal == null && campaign.billing_account.balance > 0)}
 				<Button
 					on:click={distributeFunds}
 					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
@@ -97,21 +75,23 @@
 				>
 			{/if}
 			{#if !data.campaign.closed}
-				<Button
-					on:click={() => (defaultModal = true)}
-					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-gray-100 text-slate-900 rounded-sm hover:bg-gray-300 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-					>Pledge</Button
+				<button
+					type="button"
+					class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform bg-gray-100 text-slate-900 rounded-sm hover:bg-gray-300 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+					on:click={pledgeDialog.open}>Open dialog</button
 				>
 			{/if}
 			<Button
 				on:click={toggleLike}
 				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-				>{#if data.likedCampaign} Liked {:else} Like {/if}</Button
+				>{#if data.likedCampaign} Upvoted {:else} Upvote {/if}</Button
 			>
 		</div>
+
+		<span>Upvote count: {data.campaign.upvote_count}</span>
 	</div>
 	<div class="flex-grow text-slate-400">
-		{#if data.campaign.participants}
+		{#if campaign.participants}
 			<div class="flex flex-wrap w-full">
 				<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
 					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">
@@ -121,7 +101,7 @@
 				</div>
 			</div>
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
-				{#each data.campaign.participants as participant}
+				{#each campaign.participants as participant}
 					<div
 						class="relative flex items-center space-x-3 rounded-sm bg-gray-800 px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
 					>
@@ -153,26 +133,107 @@
 	</div>
 </div>
 
-<Modal title="Pledge le monaaay" bind:open={defaultModal} autoclose>
-	<div class="flex items-center justify-center pb-6">
-		<form>
-			<div
-				class="flex flex-col p-1.5 overflow-hidden border rounded-lg dark:border-gray-600 lg:flex-row dark:focus-within:border-blue-300 focus-within:ring focus-within:ring-opacity-40 focus-within:border-blue-400 focus-within:ring-blue-300"
-			>
-				<input
-					class="outline-none bg-white disabled:bg-gray-200 focus:outline-none p-2 w-full"
-					name="amount"
-					placeholder="ze money"
-					aria-label="ze money"
-					autocomplete="off"
-					bind:value={pledgeInputVal}
-				/>
-				<button
-					on:click={pledgeMoney}
-					class="px-4 py-3 text-sm font-medium tracking-wider text-gray-100 uppercase transition-colors duration-300 transform bg-gray-700 rounded-md hover:bg-gray-600 focus:bg-gray-600 focus:outline-none"
-					>Pledge</button
+<div class="relative z-10">
+	<Transition show={$successDialog.expanded}>
+		<Transition
+			enter="ease-out duration-300"
+			enterFrom="opacity-0"
+			enterTo="opacity-100"
+			leave="ease-in duration-200"
+			leaveFrom="opacity-100"
+			leaveTo="opacity-0"
+		>
+			<div class="fixed inset-0 bg-black bg-opacity-25" on:click={successDialog.close} />
+		</Transition>
+
+		<div class="fixed inset-0 overflow-y-auto">
+			<div class="flex min-h-full items-center justify-center p-4 text-center">
+				<Transition
+					enter="ease-out duration-300"
+					enterFrom="opacity-0 scale-95"
+					enterTo="opacity-100 scale-100"
+					leave="ease-in duration-200"
+					leaveFrom="opacity-100 scale-100"
+					leaveTo="opacity-0 scale-95"
 				>
+					<div
+						class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+						use:successDialog.modal
+					>
+						<h3 class="text-lg font-medium leading-6 text-gray-900">Payment successful</h3>
+						<div class="mt-2">
+							<p class="text-sm text-gray-500">
+								Your payment has been successfully submitted. We’ve sent you an email with all of
+								the details of your order.
+							</p>
+						</div>
+
+						<div class="mt-4">
+							<button
+								type="button"
+								class="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+								on:click={successDialog.close}
+							>
+								Got it, thanks!
+							</button>
+						</div>
+					</div>
+				</Transition>
 			</div>
-		</form>
-	</div>
-</Modal>
+		</div>
+	</Transition>
+</div>
+
+<div class="relative z-10">
+	<Transition show={$pledgeDialog.expanded}>
+		<Transition
+			enter="ease-out duration-300"
+			enterFrom="opacity-0"
+			enterTo="opacity-100"
+			leave="ease-in duration-200"
+			leaveFrom="opacity-100"
+			leaveTo="opacity-0"
+		>
+			<div class="fixed inset-0 bg-black bg-opacity-25" on:click={pledgeDialog.close} />
+		</Transition>
+
+		<div class="fixed inset-0 overflow-y-auto">
+			<div class="flex min-h-full items-center justify-center p-4 text-center">
+				<Transition
+					enter="ease-out duration-300"
+					enterFrom="opacity-0 scale-95"
+					enterTo="opacity-100 scale-100"
+					leave="ease-in duration-200"
+					leaveFrom="opacity-100 scale-100"
+					leaveTo="opacity-0 scale-95"
+				>
+					<div
+						class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+						use:pledgeDialog.modal
+					>
+						<h3 class="text-lg font-medium leading-6 text-gray-900">Pledge credits</h3>
+						<div class="mt-2">
+							<input
+								bind:value={pledgeInputVal}
+								class="block w-full rounded-md border-0 text-black px-2 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+							/>
+						</div>
+
+						<div class="mt-4">
+							<button
+								type="button"
+								class="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+								on:click={() => {
+									pledgeDialog.close();
+									pledge(pledgeInputVal);
+								}}
+							>
+								Pledge
+							</button>
+						</div>
+					</div>
+				</Transition>
+			</div>
+		</div>
+	</Transition>
+</div>
