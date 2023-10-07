@@ -182,7 +182,7 @@
 				{id}
 				{name}
 				{...$$restProps}
-				class="block w-full rounded-md border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 px-2"
+				class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6 px-2"
 				on:input={async (e) => {
 					selectedIndex = -1;
 					if (!open && e.target.value.length > 0) {
@@ -265,7 +265,7 @@
 			{/if}
 			{#if value}
 				<ListBoxSelection
-					class="z-10 h-full top-0 leading-snug font-normal absolute text-center text-slate-300 absolute bg-transparent rounded text-base items-center justify-center w-8 right-6 pr-3 py-3"
+					class="z-10 h-full top-0 leading-snug font-normal absolute text-center  absolute bg-transparent rounded text-base items-center justify-center w-8 right-6 pr-3 py-3"
 					on:clear
 					on:clear={clear}
 					{disabled}
@@ -273,7 +273,7 @@
 				/>
 			{/if}
 			<ListBoxMenuIcon
-				class="z-10 h-full top-0 leading-snug font-normal absolute text-center text-slate-300 absolute bg-transparent rounded text-base items-center justify-center w-8 right-0 pr-3 py-3"
+				class="z-10 h-full top-0 leading-snug font-normal absolute text-center  absolute bg-transparent rounded text-base items-center justify-center w-8 right-0 pr-3 py-3"
 				on:click={(e) => {
 					if (disabled) return;
 					e.stopPropagation();

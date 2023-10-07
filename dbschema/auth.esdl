@@ -1,4 +1,4 @@
-module auth {
+module default {
     type User extending default::HasBillingAccount {
         property name -> str;
         required property email -> str {
@@ -17,6 +17,7 @@ module auth {
                 name := __subject__.email
             })
         }
+        stripe_connected_account: str;
     }
 
     type Account {

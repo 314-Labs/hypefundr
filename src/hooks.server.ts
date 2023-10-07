@@ -1,9 +1,9 @@
 import { SvelteKitAuth } from '@auth/sveltekit';
 import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from '$env/static/private';
-import { EdgeDBAdapter } from '$lib/authjs-edgedb-adapter';
+import { EdgeDBAdapter } from "@auth/edgedb-adapter"
 import Twitch from '@auth/core/providers/twitch';
 import GitHub from '@auth/core/providers/github';
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 import { sequence } from '@sveltejs/kit/hooks';
 import { createTRPCHandle } from 'trpc-sveltekit';
 import { router } from '$lib/trpc/router';

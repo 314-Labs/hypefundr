@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 import { router } from '$lib/trpc/router';
 import { createContext } from '$lib/trpc/context';
 import e from '$db';
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 export const load: PageServerLoad = async (event) => {
 	const {
 		params: { slug },
@@ -30,7 +30,7 @@ export const load: PageServerLoad = async (event) => {
 						filter_single: e.op(
 							e.op(row.campaign.id, '=', e.uuid(campaign.id)),
 							'and',
-							e.op(row.user.email, '=', session.user?.email!)
+							e.op(row.user.id, '=', e.uuid(session.user.id))
 						)
 					}))
 				)

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { getGameCover } from '$lib/util';
 	import type { PageData } from './$types';
 	import { Button, Modal, Toast } from 'flowbite-svelte';
 	import GlowingPanel from './GlowingPanel.svelte';
@@ -58,11 +57,7 @@
 >
 	<div class="md:w-72 flex-grow md:flex-none space-y-4">
 		<div>
-			<img
-				src={getGameCover(data.campaign.game.id)}
-				alt="Game cover art"
-				class="w-full object-cover object-center rounded-sm"
-			/>
+			<img src="" alt="Game cover art" class="w-full object-cover object-center rounded-sm" />
 			<h3 class="text-gray-300 text-xl mt-2 font-semibold">
 				{data.campaign.game.title}
 			</h3>

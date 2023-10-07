@@ -24,8 +24,8 @@ module default {
         goal: int64;
         required game: Game;
         game_mode: GameMode;
-        required creator: auth::User;
-        required multi participants: auth::User;
+        required creator: User;
+        required multi participants: User;
         required closed: bool {
             default := false;
         }
@@ -44,7 +44,7 @@ module default {
 
     type Pledge extending HasCreatedAt {
         required campaign: Campaign;
-        required user: auth::User;
+        required user: User;
         required num_credits: int64 {
             constraint min_value(1);
         }
@@ -53,13 +53,13 @@ module default {
 
     type Payout extending HasCreatedAt {
         required campaign: Campaign;
-        required user: auth::User;
+        required user: User;
         required num_credits: int64;
         required credit_transaction: CreditTransaction;
     }
 
     type UserUpvote extending HasCreatedAt {
-        required user: auth::User;
+        required user: User;
         required campaign: Campaign;
         constraint exclusive on ((.user, .campaign));
 
@@ -76,7 +76,10 @@ module default {
             }
         );
     }
-    Scalar type SpecialAccount extending enum<StripeCheckout>; 
+    Scalar type SpecialAccount extending enum<
+        StripeCheckout, # credit source when users purchase credits using stripe checkout
+        StripeConnect   # credit sink when users withdraw credits using stripe connect
+        >; 
     
     type BillingAccount {
         required name: str;
@@ -113,10 +116,17 @@ module default {
         }
     }
 
-    type CreditPurchase extending HasCreatedAt{
-        required user: auth::User;
+    type CreditPurchase extending HasCreatedAt {
+        required user: User;
         required fiat_paid: int64;
         required num_credits: int64;
         required credit_transaction: CreditTransaction;
+    }
+
+    type CreditWithdrawal extending HasCreatedAt {
+        required user: User;
+        required num_credits: int64;
+        required credit_transaction: CreditTransaction;
+        required fiat_earned: int64;
     }
 }

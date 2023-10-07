@@ -6,7 +6,8 @@ npm install
 
 Initialize edgedb instance
 ```
-edgedb project init
+edgedb project init # initializes edgedb instance
+edgedb watch # updates 
 ```
 
 Generate edgedb types

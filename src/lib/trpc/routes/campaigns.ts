@@ -1,11 +1,11 @@
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 import e from '$db';
 import { t } from '$lib/trpc/t';
 import { z } from 'zod';
 import { Game } from '$db/modules/default';
 import { TRPCError } from '@trpc/server';
 import { auth } from '../middleware/auth';
-
+import { insertCreditTransaction } from '$lib/credits';
 
 export const campaigns = t.router({
 	list: t.procedure.query(() =>
@@ -79,12 +79,12 @@ export const campaigns = t.router({
 								id: input.gameId
 							}
 						})),
-						creator: e.select(e.auth.User, (user) => ({
+						creator: e.select(e.User, (user) => ({
 							filter_single: {
 								id: ctx.session!.user.id
 							}
 						})),
-						participants: e.select(e.auth.User, (user) => ({
+						participants: e.select(e.User, (user) => ({
 							filter: e.op(user.id, 'in', e.array_unpack(params.participantIds))
 						}))
 					})
@@ -99,7 +99,7 @@ export const campaigns = t.router({
 		})).mutation(async ({ input: { campaignId, numCredits }, ctx: { session } }) => {
 
 			const campaignQuery = e.select(e.Campaign, campaign => ({ filter_single: { id: campaignId } }));
-			const userQuery = e.select(e.auth.User, user => ({ filter_single: { id: session!.user.id } }))
+			const userQuery = e.select(e.User, user => ({ filter_single: { id: session!.user.id } }))
 
 			await client.transaction(async tx => {
 
@@ -154,7 +154,7 @@ export const campaigns = t.router({
 						id: input
 					}
 				})),
-				user: e.select(e.auth.User, (user) => ({
+				user: e.select(e.User, (user) => ({
 					filter_single: {
 						id: ctx.session!.user.id
 					}
@@ -186,6 +186,7 @@ export const campaigns = t.router({
 					balance: true
 				},
 				participants: {
+					id: true,
 					billing_account: {
 						id: true,
 						balance: true
@@ -214,51 +215,21 @@ export const campaigns = t.router({
 				payouts[i]++;
 			}
 
-			const amountAccountTuples = payouts.map((x, i) => ({ amount: x, account_id: campaign.participants[i].billing_account.id }));
-			const amountUserTuples = payouts.map((x, i) => ({ amount: x, user_id: campaign.participants[i].id }));
+			const amountAccountTuples = payouts.map((x, i) => ({ amount: x, accountId: campaign.participants[i].billing_account.id }));
+			const amountUserTuples = payouts.map((x, i) => ({ amount: x, userId: campaign.participants[i].id }));
 
 
 			// add the posting where we withdraw all credits from the campaing account
-			amountAccountTuples.push({ amount: -campaign.billing_account.balance, account_id: campaign.billing_account.id });
+			amountAccountTuples.push({ amount: -campaign.billing_account.balance, accountId: campaign.billing_account.id });
 
-			// query to insert all postings and transaction
-			const creditTransactionQuery = e.params({ postings: e.array(e.tuple({ amount: e.int64, account_id: e.uuid })) }, (params) => {
-				return e.insert(e.CreditTransaction, {
-					postings: e.for(e.array_unpack(params.postings), (item) => {
-						return e.insert(e.Posting, {
-							account: e.select(e.BillingAccount, ba => ({ filter_single: { id: item.account_id } })),
-							amount: item.amount
-						});
-					}),
-					notes: "Campaign credit payouts"
-				})
-			});
-
-			const { id: insertedTransacId } = await creditTransactionQuery.run(tx, {
-				postings: amountAccountTuples
-			});
-
-
-			// step 3: update account balances
-			const updateBalanceQuery = e.params({ postings: e.array(e.tuple({ amount: e.int64, account_id: e.uuid })) }, (params) => {
-				return e.for(e.array_unpack(params.postings), (item) => {
-					return e.update(e.BillingAccount, ba => ({
-						filter_single: { id: item.account_id },
-						set: {
-							balance: e.op(ba.balance, '+', item.amount)
-						}
-					}));
-				})
-			});
-
-			await updateBalanceQuery.run(tx, { postings: amountAccountTuples });
+			const insertedTransacId = await insertCreditTransaction(amountAccountTuples, tx);
 
 			// step 4: insert Payout rows
 
-			const insertPayoutRows = e.params({ userAmounts: e.array(e.tuple({ amount: e.int64, user_id: e.uuid })) }, (params) => {
+			const insertPayoutRows = e.params({ userAmounts: e.array(e.tuple({ amount: e.int64, userId: e.uuid })) }, (params) => {
 				return e.for(e.array_unpack(params.userAmounts), (item) => {
 					return e.insert(e.Payout, {
-						user: e.select(e.auth.User, u => ({ filter_single: { id: item.user_id } })),
+						user: e.select(e.User, u => ({ filter_single: { id: item.userId } })),
 						num_credits: item.amount,
 						campaign: e.select(e.Campaign, c => ({ filter_single: { id: campaign.id } })),
 						credit_transaction: e.select(e.CreditTransaction, ct => ({ filter_single: { id: insertedTransacId } }))
@@ -266,9 +237,7 @@ export const campaigns = t.router({
 				});
 			});
 
+			await insertPayoutRows.run(tx, { userAmounts: amountUserTuples });
 		});
-
-
 	})
-
 })

@@ -1,2 +1,4 @@
 import { createClient } from 'edgedb';
-export const client = createClient();
+const client = createClient();
+
+export default client;

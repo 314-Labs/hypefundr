@@ -26,7 +26,7 @@ async function fetchGames() {
         fields('*'),
         where('rating_count', '!=', null),
         sort('rating_count', 'desc'),
-        limit(200)
+        limit(5)
     ).execute();
     return response.data;
 }
@@ -63,6 +63,7 @@ for (const game of games) {
         igdb_id: game.id!
     });
 
+    console.log(`Inserting ${game.name!}`);
     let result = await query.run(dbClient);
 
     // const coverUrl =  "https:" + coverData[0].url!.replace('t_thumb', 't_original');
@@ -76,4 +77,16 @@ for (const game of games) {
 
 }
 
-console.log('Successfully stored the games in Supabase and downloaded the covers')
+console.log("Inserting system accounts");
+
+await e.insert(e.BillingAccount, {
+    name: "Stripe Checkout",
+    can_go_negative: true,
+    special_account_type: e.SpecialAccount.StripeCheckout
+}).run(dbClient);
+
+await e.insert(e.BillingAccount, {
+    name: "Stripe Connect",
+    can_go_negative: false,
+    special_account_type: e.SpecialAccount.StripeConnect
+}).run(dbClient);

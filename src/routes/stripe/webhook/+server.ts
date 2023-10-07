@@ -4,7 +4,7 @@ import type { RequestHandler } from './$types';
 import stripe from '$lib/stripe';
 import { STRIPE_WEBHOOK_SECRET } from '$env/static/private'
 import type { Stripe } from 'stripe';
-import { client } from '$lib/edgedb';
+import client from '$lib/edgedb';
 import e from '$db';
 import { CreditTransaction } from '$db/modules/default';
 
@@ -47,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 
         await client.transaction(async tx => {
-            const userQuery = e.select(e.auth.User, user => ({ filter_single: { id: userId } }));
+            const userQuery = e.select(e.User, user => ({ filter_single: { id: userId } }));
             const stripeAccountQuery = e.select(e.BillingAccount, ba => ({ filter_single: e.op(ba.special_account_type, '=', e.SpecialAccount.StripeCheckout) }));
 
             const updateStripeAccountBalance = e.update(e.BillingAccount, ba => ({
