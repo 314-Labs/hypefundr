@@ -18,7 +18,10 @@
 
 	let gameModeComboBox: ComboBox<Awaited<ReturnType<typeof fetchGameModes>>[number]>;
 
+	let selectedGameMode = '';
+
 	let descriptionText: string = '';
+
 	const fetchGames = async (title: string) => {
 		gameModeComboBox.clear();
 		let gameResult = await trpc().games.list.query(title);
@@ -30,6 +33,12 @@
 			disabled: false
 		}));
 	};
+
+	const gameModes = [
+		{id: 1, text: 'Singleplayer'},
+		{id: 2, text: 'Co-Op'},
+		{id: 3, text: 'PvP'}
+	]
 
 	const fetchGameModes = async (modeName: string) => {
 		return []; // Ts
@@ -131,9 +140,20 @@
 				</div>
 
 				<div class="w-full">
-					<label for="gameMode" class="block mb-2 text-sm font-medium">Game Mode</label>
-
-					<ComboBox
+					<label for="game-mode" class="block mb-2 text-sm font-medium">Game Mode</label>
+					<form name="gameMode">
+						<select bind:value={selectedGameMode}
+						class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+						required>
+							<option value="" disabled selected>{'Select Game Mode'}</option>
+							{#each gameModes as gameMode}
+								<option value={gameMode}>
+									{gameMode.text}
+								</option>
+							{/each}
+						</select>
+					</form>
+					<!-- <ComboBox
 						placeholder="Select Game Mode"
 						name="gameMode"
 						trueName="gameModeId"
@@ -141,7 +161,7 @@
 						let:item
 						bind:this={gameModeComboBox}
 						disabled={gameId == undefined}
-					/>
+					/> -->
 				</div>
 
 				<div class="sm:col-span-2">
