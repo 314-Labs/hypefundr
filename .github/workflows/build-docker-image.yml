@@ -50,7 +50,6 @@ jobs:
 
       - name: Generate edgedb client
         run: |
-            edgedb project init --non-interactive
             edgedb migration create
             edgedb migrate 
             npx @edgedb/generate edgeql-js
