@@ -15,6 +15,7 @@ jobs:
               run: |
                 mkdir -p  ~/.ssh
                 echo "${{ secrets.KEY }}" > ~/.ssh/id_rsa
+                chmod 600 ~/.ssh/id_rsa
                 ssh-keyscan -t rsa pickaxe >> ~/.ssh/known_hosts
                 ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }}
                 cd ~
