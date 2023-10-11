@@ -72,7 +72,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: hypefundr:latest
+          tags: phil314/hypefundr:latest
           cache-from: type=registry,ref=hypefundr:buildcache
           cache-to: type=inline
 
