@@ -59,7 +59,7 @@ jobs:
         id: docker_build
         with:
           context: .
-          file: ./Dockerfile.prod
+          file: ./Dockerfile
           push: true
           tags: hypefundr:latest
           cache-from: type=registry,ref=hypefundr:buildcache
