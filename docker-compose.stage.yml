@@ -6,3 +6,17 @@ services:
       EDGEDB_SERVER_SECURITY: insecure_dev_mode
     ports:
       - 127.0.0.1:5656:5656
+    volumes:
+      - schema:/dbschema
+
+  hypefundr:
+    build: .
+    environment:
+      EDGEDB_DSN: edgedb://edgedb:5656
+    volumes:
+      - schema:/app/dbschema
+    ports:
+      - 3000:3000
+    env_file: .env.stage
+volumes:
+  schema:
