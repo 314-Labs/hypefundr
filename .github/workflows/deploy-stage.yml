@@ -1,0 +1,31 @@
+name: Deploy to stage
+on: [push]
+jobs:
+    deploy-to-pickaxe:
+        runs-on: alpine 
+        steps:
+            - name: Tailscale
+              uses: tailscale/github-action@v2
+              with:
+                oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+                oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+                tags: tag:ci
+
+            - name: ssh into pickaxe and setup hypefundr
+              uses: appleboy/ssh-action@v1.0.0
+              with:
+                host: ${{ secrets.HOST }}
+                username: ${{ secrets.USERNAME }}
+                key: ${{ secrets.KEY }}
+                script: | 
+                    cd ~
+                    rm -rf hypefundr
+                    git clone git@github.com:314-Labs/hypefundr.git
+                    cd hypefundr
+                    docker-compose down
+                    npm install
+                    docker-compose up -d
+                    edgedb --dsn=edgedb:// migration create
+                    edgedb --dsn=edgedb:// migrate 
+                    npx @edgedb/generate edgeql-js
+                    nohup npm run dev &

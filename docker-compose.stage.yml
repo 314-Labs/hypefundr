@@ -1,0 +1,8 @@
+version: "3"
+services:
+  edgedb:
+    image: edgedb/edgedb
+    environment:
+      EDGEDB_SERVER_SECURITY: insecure_dev_mode
+    ports:
+      - 127.0.0.1:5656:5656

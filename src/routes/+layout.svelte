@@ -4,6 +4,7 @@
 	import Transition from 'svelte-transition';
 
 	import { page } from '$app/stores';
+	export let data;
 	let showDropdown = false;
 </script>
 
