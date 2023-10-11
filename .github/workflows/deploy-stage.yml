@@ -12,20 +12,18 @@ jobs:
                 tags: tag:ci
 
             - name: ssh into pickaxe and setup hypefundr
-              uses: appleboy/ssh-action@v1.0.0
-              with:
-                host: ${{ secrets.HOST }}
-                username: ${{ secrets.USERNAME }}
-                key: ${{ secrets.KEY }}
-                script: | 
-                    cd ~
-                    rm -rf hypefundr
-                    git clone git@github.com:314-Labs/hypefundr.git
-                    cd hypefundr
-                    docker-compose down
-                    npm install
-                    docker-compose up -d
-                    edgedb --dsn=edgedb:// migration create
-                    edgedb --dsn=edgedb:// migrate 
-                    npx @edgedb/generate edgeql-js
-                    nohup npm run dev &
+              run: |
+                echo "${{ secrets.KEY }}" > ~/.ssh/id_rsa
+                ssh-keyscan -t rsa pickaxe >> ~/.ssh/known_hosts
+                ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }}
+                cd ~
+                rm -rf hypefundr
+                git clone git@github.com:314-Labs/hypefundr.git
+                cd hypefundr
+                docker-compose down
+                npm install
+                docker-compose up -d
+                edgedb --dsn=edgedb:// migration create
+                edgedb --dsn=edgedb:// migrate 
+                npx @edgedb/generate edgeql-js
+                nohup npm run dev &
