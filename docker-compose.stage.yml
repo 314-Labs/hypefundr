@@ -10,7 +10,7 @@ services:
       - schema:/dbschema
 
   hypefundr:
-    build: .
+    image: phil314/hypefundr
     environment:
       EDGEDB_DSN: edgedb://edgedb:5656
     volumes:
