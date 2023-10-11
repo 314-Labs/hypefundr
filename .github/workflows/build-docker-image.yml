@@ -51,6 +51,12 @@ jobs:
       - name: Generate edgedb client
         run: npx @edgedb/generate edgeql-js
 
+      -
+        name: Login to self hosted registry
+        uses: docker/login-action@v1 
+        with:
+          registry: pickaxe:5000
+
       - name: Build and push
         uses: docker/build-push-action@v2
         id: docker_build
