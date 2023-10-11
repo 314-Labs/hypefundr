@@ -1,0 +1,70 @@
+name: docker build
+# on:
+#   push:
+#     branches:
+#       - 'production-live'
+#   pull_request:
+#     branches:
+#       - 'production-live'
+on: [push]
+  # Allows you to run this workflow manually from the Actions tab
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    # services:
+    #     edgedb:
+    #         image:  edgedb/edgedb
+    #         ports:
+    #         - 5656:5656
+
+    steps:
+      # this workflow needs app source and Dockerfile to build image
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Show dir
+        run: ls
+
+      # identify commit
+      - name: Print commit id and message
+        run: |
+          git show -s --format='%h %s'
+
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+    #   -
+    #     name: Login to GitHub Container Registry
+    #     uses: docker/login-action@v1 
+    #     with:
+    #         registry: pickaxe:5000
+
+      - uses: actions/setup-node@v3
+        with:
+            node-version: 18
+
+      - uses: edgedb/setup-edgedb@v1
+
+      - name: Generate edgedb client
+        run: |
+            edgedb project init --non-interactive
+            edgedb migration create
+            edgedb migrate 
+            npx @edgedb/generate edgeql-js
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        id: docker_build
+        with:
+          context: .
+          file: ./Dockerfile.prod
+          push: true
+          tags: hypefundr:latest
+          cache-from: type=registry,ref=hypefundr:buildcache
+          cache-to: type=inline
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
