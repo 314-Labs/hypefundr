@@ -20,6 +20,9 @@ jobs:
                 oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
                 oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                 tags: tag:ci
+                
+            - name: Create env file
+              run: echo "${{ secrets.ENV_STAGE }}" > .env.stage
 
             - name: Start Deployment
               uses: FarisZR/docker-compose-gitops-action@v1
@@ -29,5 +32,4 @@ jobs:
                 compose_file_path: docker-compose.stage.yml
                 upload_directory: true # upload docker directory
                 docker_compose_directory: ./dbschema # directory to upload
-                post_upload_command: echo "${{ secrets.ENV_STAGE }}" > .env.stage
-                args: -p postgres up -d
+                args: -p hypefundr up -d
