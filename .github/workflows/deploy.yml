@@ -25,6 +25,6 @@ jobs:
                 tailscale_ssh: true # no need for manual private and public keys
                 compose_file_path: docker-compose.stage.yml
                 upload_directory: true # upload docker directory
-                docker_compose_directory: dbschema # directory to upload
+                docker_compose_directory: ./dbschema # directory to upload
                 post_upload_command: echo "${{ secrets.ENV_STAGE }}" > .env.stage
                 args: -p postgres up -d
