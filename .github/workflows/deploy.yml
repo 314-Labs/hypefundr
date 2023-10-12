@@ -1,0 +1,30 @@
+name: deploy
+on:
+    workflow_run:
+        workflows: ["build-docker-image"]
+        # branches: [main]
+        types: 
+          - completed
+    
+
+jobs:
+    deploy-job: 
+        runs-on: ubuntu-latest
+        steps:
+            - name: Tailscale
+              uses: tailscale/github-action@v2
+              with:
+                oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+                oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+                tags: tag:ci
+
+            - name: Start Deployment
+              uses: FarisZR/docker-compose-gitops-action@v1
+              with:
+                remote_docker_host: root@pickaxe
+                tailscale_ssh: true # no need for manual private and public keys
+                compose_file_path: docker-compose.stage.yml
+                upload_directory: true # upload docker directory
+                docker_compose_directory: dbschema # directory to upload
+                post_upload_command: echo "${{ secrets.ENV_STAGE }}" > .env.stage
+                args: -p postgres up -d

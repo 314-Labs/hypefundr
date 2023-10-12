@@ -1,13 +1,11 @@
-name: docker build
-# on:
+name: build-docker-image
+on: push
 #   push:
 #     branches:
-#       - 'production-live'
-#   pull_request:
-#     branches:
-#       - 'production-live'
-on: [push]
+#       - main
+
   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
 
 jobs:
   docker:
