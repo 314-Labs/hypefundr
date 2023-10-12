@@ -14,8 +14,9 @@ done
 
 # Optional: Print a message to indicate the operation is complete
 echo "Environment variables have been written to $output_file"
-ls -la
 npm run build
 
+# seed database
+npx tsx scripts/seed.ts --yes
 # start
 node -r dotenv/config build
