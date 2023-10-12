@@ -1,10 +1,10 @@
 name: deploy
-on: push
-    # workflow_run:
-    #     workflows: ["build-docker-image"]
-        # branches: [main]
-        # types: 
-        #   - completed
+on:
+    workflow_run:
+        workflows: ["build-docker-image"]
+        branches: [main]
+        types: 
+          - completed
     
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
                 oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
                 oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
                 tags: tag:ci
-                
+
             - name: Create env file
               run: echo "${{ secrets.ENV_STAGE }}" > .env.stage
 
