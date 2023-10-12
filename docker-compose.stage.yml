@@ -7,7 +7,7 @@ services:
     ports:
       - 127.0.0.1:5656:5656
     volumes:
-      - ./dbschema:/dbschema
+      - /root/dbschema:/dbschema
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5656/server/status/alive"]
       interval: 60s
@@ -16,7 +16,7 @@ services:
       timeout: 10s
 
   hypefundr:
-    image: phil314/hypefundr
+    image: phil314/hypefundr:latest
     environment:
       EDGEDB_DSN: edgedb://edgedb:5656
     ports:
