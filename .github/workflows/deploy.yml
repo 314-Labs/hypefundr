@@ -11,6 +11,9 @@ jobs:
     deploy-job: 
         runs-on: ubuntu-latest
         steps:
+            - name: Check out code
+              uses: actions/checkout@v3
+
             - name: Tailscale
               uses: tailscale/github-action@v2
               with:
