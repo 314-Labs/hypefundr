@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { Button, Modal, Toast } from 'flowbite-svelte';
 	import GlowingPanel from './GlowingPanel.svelte';
 	import { trpc } from '$lib/trpc/client';
 	import { goto } from '$app/navigation';
@@ -68,10 +67,10 @@
 		<GlowingPanel pledged={campaign.billing_account.balance} goal={campaign.goal} />
 		<div class="space-y-4">
 			{#if (!campaign.closed && campaign.goal != null && campaign.goal <= data.campaign.billing_account.balance) || (data.campaign.goal == null && campaign.billing_account.balance > 0)}
-				<Button
+				<button
 					on:click={distributeFunds}
-					btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-					>End Campaign and Distribute Funds</Button
+					class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+					>End Campaign and Distribute Funds</button
 				>
 			{/if}
 			{#if !data.campaign.closed}
@@ -81,10 +80,10 @@
 					on:click={pledgeDialog.open}>Open dialog</button
 				>
 			{/if}
-			<Button
+			<button
 				on:click={toggleLike}
-				btnClass="w-full px-6 py-2 font-medium tracking-wide  capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-				>{#if data.likedCampaign} Upvoted {:else} Upvote {/if}</Button
+				class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+				>{#if data.likedCampaign} Upvoted {:else} Upvote {/if}</button
 			>
 		</div>
 

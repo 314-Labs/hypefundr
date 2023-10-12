@@ -1,0 +1,27 @@
+version: "3"
+services:
+  edgedb:
+    image: edgedb/edgedb
+    environment:
+      EDGEDB_SERVER_SECURITY: insecure_dev_mode
+    ports:
+      - 127.0.0.1:5656:5656
+    volumes:
+      - /root/dbschema:/dbschema
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5656/server/status/alive"]
+      interval: 60s
+      retries: 5
+      start_period: 20s
+      timeout: 10s
+
+  hypefundr:
+    image: phil314/hypefundr:latest
+    environment:
+      EDGEDB_DSN: edgedb://edgedb:5656
+    ports:
+      - 3000:3000
+    env_file: .env.stage
+    depends_on:
+      edgedb:
+        condition: service_healthy

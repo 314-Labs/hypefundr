@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { SvelteKitAuth } from '@auth/sveltekit';
 import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET } from '$env/static/private';
 import { EdgeDBAdapter } from "@auth/edgedb-adapter"
@@ -9,8 +12,10 @@ import { createTRPCHandle } from 'trpc-sveltekit';
 import { router } from '$lib/trpc/router';
 import { createContext } from '$lib/trpc/context';
 
+
 export const handle = sequence(
 	SvelteKitAuth({
+		trustHost: true,
 		adapter: EdgeDBAdapter(client),
 		providers: [Twitch({ clientId: TWITCH_CLIENT_ID, clientSecret: TWITCH_CLIENT_SECRET })],
 		session: {
