@@ -8,6 +8,7 @@ export const games = t.router({
 			.select(e.Game, (game) => ({
 				id: true,
 				title: true,
+				poster_image: true,
 				filter: e.op(game.title, 'ilike', `%${input}%`),
 				limit: 10
 			}))

@@ -1,4 +1,4 @@
-CREATE MIGRATION m1rfw3ljvhdpp26fcgommrmlqk5zntpiqs2kta73rgg5ct4tqgweta
+CREATE MIGRATION m13irjcupp2bxgjzt2xkg4pil6247uouifwvwygmlg6n4uh4cqqtoq
     ONTO initial
 {
   CREATE FUTURE nonrecursive_access_policies;
@@ -30,7 +30,9 @@ CREATE MIGRATION m1rfw3ljvhdpp26fcgommrmlqk5zntpiqs2kta73rgg5ct4tqgweta
       };
       CREATE REQUIRED PROPERTY name: std::str;
       CREATE CONSTRAINT std::expression ON ((.can_go_negative OR (.balance >= 0)));
-      CREATE PROPERTY special_account_type: default::SpecialAccount;
+      CREATE PROPERTY special_account_type: default::SpecialAccount {
+          CREATE CONSTRAINT std::exclusive;
+      };
   };
   CREATE ABSTRACT TYPE default::HasBillingAccount {
       CREATE REQUIRED LINK billing_account: default::BillingAccount {
@@ -77,6 +79,7 @@ CREATE MIGRATION m1rfw3ljvhdpp26fcgommrmlqk5zntpiqs2kta73rgg5ct4tqgweta
   };
   CREATE TYPE default::Game {
       CREATE REQUIRED PROPERTY igdb_id: std::int64;
+      CREATE REQUIRED PROPERTY poster_image: std::str;
       CREATE REQUIRED PROPERTY title: std::str;
   };
   CREATE TYPE default::GameMode {

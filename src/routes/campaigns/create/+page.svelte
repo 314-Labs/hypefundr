@@ -26,7 +26,7 @@
 		return gameResult.map((game) => ({
 			id: game.id,
 			text: game.title,
-			cover: 'TODO: Add actual game poster',
+			cover: game.poster_image,
 			disabled: false
 		}));
 	};
@@ -58,13 +58,13 @@
 						type="text"
 						name="title"
 						id="title"
-						class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						placeholder="Type campaign name"
 						required
 					/>
 				</div>
 				<div class="sm:col-span-2">
-					<label for="name" class="block mb-2 text-sm font-medium">Add Users</label>
+					<label for="name" class="block mb-2 text-sm font-medium">Add Fundees</label>
 					{#each campaignUsers as user (user.id)}
 						<div
 							transition:fade
@@ -104,7 +104,7 @@
 						class="mt-4"
 						titleText="Users"
 						name="user-select"
-						placeholder="Select Campaign Users"
+						placeholder="Select Fundees"
 						optionsFetcher={fetchUsers}
 						on:select={({ detail: { item } }) => {
 							const alreadyAdded = campaignUsers.find((x) => x.id == item.id) != undefined;
@@ -150,7 +150,7 @@
 					<textarea
 						name="tagline"
 						id="tagline"
-						class="block w-full rounded-md border-0 bg-white/5 py-1.5 shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
+						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 					/>
 				</div>
 				<div class="sm:col-span-2">
@@ -158,7 +158,7 @@
 					<!-- works in conjunction with vite.config.ts -->
 					<Editor
 						scriptSrc="/tinymce/tinymce.min.js"
-						conf={{ promotion: false, skin: 'oxide-dark', content_css: 'dark' }}
+						conf={{ promotion: false }}
 						id="description"
 						bind:value={descriptionText}
 					/>
@@ -167,7 +167,7 @@
 			</div>
 			<button
 				type="submit"
-				class=" px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center bg-primary-700 focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800 w-full"
+				class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 w-full mt-8"
 			>
 				Create Campaign
 			</button>

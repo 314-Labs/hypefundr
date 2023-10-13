@@ -4,7 +4,7 @@
 	import Transition from 'svelte-transition';
 
 	import { page } from '$app/stores';
-	export let data;
+	import Incomplete from '$lib/components/icons/Incomplete.svelte';
 	let showDropdown = false;
 </script>
 
@@ -80,46 +80,33 @@
 				</div>
 				<div class="flex items-center">
 					<div class="flex-shrink-0">
-						<a
-							hidden={!$page.data.session}
-							class="relative inline-flex items-center gap-x-1.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-							href="/campaigns/create"
-						>
-							<svg
-								class="-ml-0.5 h-5 w-5"
-								viewBox="0 0 20 20"
-								fill="currentColor"
-								aria-hidden="true"
+						{#if $page.data.session}
+							<a
+								class="relative inline-flex items-center gap-x-1.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+								href="/campaigns/create"
 							>
-								<path
-									d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
-								/>
-							</svg>
-							New Campaign
-						</a>
+								<svg
+									class="-ml-0.5 h-5 w-5"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									aria-hidden="true"
+								>
+									<path
+										d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
+									/>
+								</svg>
+								New Campaign
+							</a>
+						{:else}
+							<a
+								class="relative inline-flex items-center gap-x-1.5 rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+								href="/auth/signin"
+							>
+								Log In
+							</a>
+						{/if}
 					</div>
 					<div class="hidden md:ml-4 md:flex md:flex-shrink-0 md:items-center">
-						<button
-							type="button"
-							class="rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-						>
-							<span class="sr-only">View notifications</span>
-							<svg
-								class="h-6 w-6"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								aria-hidden="true"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-								/>
-							</svg>
-						</button>
-
 						<!-- Profile dropdown -->
 						{#if $page.data.session}
 							<div class="relative ml-3">
@@ -135,7 +122,7 @@
 										<span class="sr-only">Open user menu</span>
 										<img
 											class="h-8 w-8 rounded-full"
-											src={$page.data.session.user?.image}
+											src={$page.data.session.user.image}
 											alt="User avatar"
 										/>
 									</button>
