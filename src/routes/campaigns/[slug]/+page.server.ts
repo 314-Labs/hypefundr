@@ -19,6 +19,14 @@ export const load: PageServerLoad = async (event) => {
 		throw error(404);
 	}
 
+	const payouts = await e.select(e.Payout, p => ({
+		filter: e.op(p.campaign.id, '=', e.uuid(campaign.id)),
+		user: {
+			name: true
+		},
+		num_credits: true
+	})).run(client);
+
 	const session = await getSession();
 	let likedCampaign = false;
 
@@ -39,5 +47,5 @@ export const load: PageServerLoad = async (event) => {
 		likedCampaign = likeRowCount == 1;
 		console.log(session);
 	}
-	return { campaign, likedCampaign, slug };
+	return { campaign, likedCampaign, slug, payouts };
 };

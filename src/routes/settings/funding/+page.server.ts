@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ locals: { getSession } }) => {
 		stripe_connected_account: true
 	})).run(client);
 
-	if (!user) throw error(500);
+	if (!user) throw error(500, "Please sign out and in again");
 
 	const creditPurchases = await e.select(e.CreditPurchase, c => ({
 		filter: e.op(c.user.id, '=', e.uuid(session.user.id)),
@@ -53,8 +53,8 @@ export const actions = {
 				},
 			],
 			mode: 'payment',
-			success_url: `${PUBLIC_ORIGIN}/success`,
-			cancel_url: `${PUBLIC_ORIGIN}/cancel`,
+			success_url: `${PUBLIC_ORIGIN}/settings/funding`,
+			cancel_url: `${PUBLIC_ORIGIN}/settings/funding`,
 			metadata: {
 				user_id: session.user.id
 			}

@@ -31,6 +31,7 @@
 		const numCredits = parseInt(inputVal);
 		if (!numCredits || numCredits < 1) return;
 		await trpc().campaigns.pledge.mutate({ campaignId: campaign.id, numCredits });
+		data.campaign.billing_account.balance += numCredits;
 	};
 </script>
 
@@ -56,20 +57,26 @@
 >
 	<div class="md:w-72 flex-grow md:flex-none space-y-4">
 		<div>
-			<img src="" alt="Game cover art" class="w-full object-cover object-center rounded-sm" />
-			<h3 class="text-gray-300 text-xl mt-2 font-semibold">
+			<img
+				src={data.campaign.game.poster_image}
+				alt="Game cover art"
+				class="w-full object-cover object-center rounded-sm"
+			/>
+			<h3 class="text-xl mt-2 font-semibold">
 				{data.campaign.game.title}
 			</h3>
-			<p class="text-gray-500">Survival</p>
+			<p>Survival</p>
 		</div>
 
 		<hr class="w-full border-t border-gray-300" />
-		<GlowingPanel pledged={campaign.billing_account.balance} goal={campaign.goal} />
+		{#if !campaign.closed}
+			<GlowingPanel pledged={campaign.billing_account.balance} goal={campaign.goal} />
+		{/if}
 		<div class="space-y-4">
 			{#if (!campaign.closed && campaign.goal != null && campaign.goal <= data.campaign.billing_account.balance) || (data.campaign.goal == null && campaign.billing_account.balance > 0)}
 				<button
 					on:click={distributeFunds}
-					class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+					class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform text-white bg-purple-700 rounded-sm hover:bg-purple-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
 					>End Campaign and Distribute Funds</button
 				>
 			{/if}
@@ -77,12 +84,12 @@
 				<button
 					type="button"
 					class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform bg-gray-100 text-slate-900 rounded-sm hover:bg-gray-300 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
-					on:click={pledgeDialog.open}>Open dialog</button
+					on:click={pledgeDialog.open}>Pledge</button
 				>
 			{/if}
 			<button
 				on:click={toggleLike}
-				class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform text-slate-100 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
+				class="w-full px-6 py-2 font-medium tracking-wide capitalize transition-colors duration-300 transform text-gray-900 hover:text-gray-200 border-slate-100 border-2 rounded-sm hover:bg-gray-800 focus:outline-none focus:ring focus:ring-blue-300 focus:ring-opacity-80"
 				>{#if data.likedCampaign} Upvoted {:else} Upvote {/if}</button
 			>
 		</div>
@@ -93,7 +100,7 @@
 		{#if campaign.participants}
 			<div class="flex flex-wrap w-full">
 				<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
-					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">
+					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-900">
 						Participants
 					</h2>
 					<div class="h-1 w-20 bg-indigo-500 rounded" />
@@ -114,7 +121,7 @@
 						<div class="min-w-0 flex-1">
 							<a href="#" class="focus:outline-none">
 								<span class="absolute inset-0" aria-hidden="true" />
-								<p class="text-sm font-medium text-gray-300">{participant.name}</p>
+								<p class="text-sm font-medium">{participant.name}</p>
 							</a>
 						</div>
 					</div>
@@ -122,9 +129,46 @@
 			</div>
 		{/if}
 
+		{#if data.campaign.closed}
+			<div class="flex flex-wrap w-full mt-8">
+				<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
+					<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-900">Payouts</h2>
+					<div class="h-1 w-20 bg-indigo-500 rounded" />
+				</div>
+			</div>
+			<div class="mt-4">
+				<table class="min-w-full divide-y divide-gray-300">
+					<thead>
+						<tr>
+							<th
+								scope="col"
+								class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+								>Name</th
+							>
+							<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+								>Amount</th
+							>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-200">
+						{#each data.payouts as payout}
+							<tr>
+								<td
+									class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
+									>{payout.user.name}</td
+								>
+								<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500"
+									>{payout.num_credits}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
 		<div class="flex flex-wrap w-full mt-8">
 			<div class="lg:w-1/2 w-full mb-6 lg:mb-0">
-				<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-200">Details</h2>
+				<h2 class="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-900">Details</h2>
 				<div class="h-1 w-20 bg-indigo-500 rounded" />
 			</div>
 		</div>
