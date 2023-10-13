@@ -1,11 +1,9 @@
 name: deploy
 on:
     workflow_run:
-        workflows: ["build-docker-image"]
-        branches: [main]
+        workflows: "build-docker-image"
         types: 
           - completed
-    
 
 jobs:
     deploy-job: 
