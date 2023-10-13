@@ -17,7 +17,8 @@ export const campaigns = t.router({
 				slug: true,
 				game: {
 					id: true,
-					title: true
+					title: true,
+					poster_image: true
 				}
 			}))
 			.run(client)
@@ -38,7 +39,8 @@ export const campaigns = t.router({
 				},
 				game: {
 					id: true,
-					title: true
+					title: true,
+					poster_image: true
 				},
 				billing_account: {
 					balance: true
@@ -141,7 +143,6 @@ export const campaigns = t.router({
 				await updateCampaignBalance.run(tx);
 				await updateUserBalance.run(tx);
 				await insertPledge.run(tx);
-
 			})
 
 		}),

@@ -16,7 +16,11 @@
 			{#each data.campaigns as campaign}
 				<div class="xl:w-1/4 md:w-1/2 p-4">
 					<a class="bg-gray-100 p-6 rounded-lg block" href={`/campaigns/${campaign.slug}`}>
-						<img class="h-40 rounded w-full object-cover object-center mb-6" src="" alt="content" />
+						<img
+							class="h-40 rounded w-full object-cover object-center mb-6"
+							src={campaign.game.poster_image}
+							alt="content"
+						/>
 						<h3 class="tracking-widest text-indigo-500 text-xs font-medium title-font">
 							{campaign.game.title}
 						</h3>
