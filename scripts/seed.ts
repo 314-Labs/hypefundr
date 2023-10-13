@@ -58,15 +58,17 @@ for (const game of games) {
         where('id', '=', game.cover!),
     ).execute();
 
+    const coverUrl = "https:" + coverData[0].url!.replace('t_thumb', 't_original');
+
     const query = e.insert(e.Game, {
         title: game.name!,
-        igdb_id: game.id!
+        igdb_id: game.id!,
+        poster_image: coverUrl
     });
 
     console.log(`Inserting ${game.name!}`);
     let result = await query.run(dbClient);
 
-    // const coverUrl =  "https:" + coverData[0].url!.replace('t_thumb', 't_original');
     // const fileName = `images/${result.id}/cover.jpg`; 
     // console.log(game.name, '\t\t\t', game.rating_count);
 

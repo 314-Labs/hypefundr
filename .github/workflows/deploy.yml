@@ -30,4 +30,4 @@ jobs:
                 compose_file_path: docker-compose.stage.yml
                 upload_directory: true # upload docker directory
                 docker_compose_directory: ./dbschema # directory to upload
-                args: -p hypefundr up -d
+                args: -p hypefundr up -d --force-recreate

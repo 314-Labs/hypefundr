@@ -4,7 +4,9 @@ module default {
         required title: str;
         # id for querying https://www.igdb.com/
         required igdb_id: int64;
+        required poster_image: str;
     }
+
     type GameMode {
         required name: str;
     }
@@ -83,14 +85,16 @@ module default {
     
     type BillingAccount {
         required name: str;
-        special_account_type: SpecialAccount;
+        special_account_type: SpecialAccount {
+            constraint exclusive;
+        }
         required balance: int64 {
             default := 0
         }
         required can_go_negative: bool {
             default := false;
         }
-         constraint expression on (
+        constraint expression on (
             .can_go_negative or .balance >= 0
         );
     }

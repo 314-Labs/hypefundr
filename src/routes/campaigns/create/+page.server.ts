@@ -1,6 +1,7 @@
 import type { Actions } from './$types';
 import { router } from '$lib/trpc/router';
 import { createContext } from '$lib/trpc/context';
+import { redirect } from '@sveltejs/kit';
 
 export const actions = {
 	default: async (event) => {
@@ -16,13 +17,16 @@ export const actions = {
 
 		const userIds = form.getAll('userIds').map((value) => value as string);
 
-		await router.createCaller(await createContext(event)).campaigns.createCampaign({
+		const c = await router.createCaller(await createContext(event)).campaigns.createCampaign({
 			title,
 			tagline,
 			description,
 			userIds,
 			gameId
 		});
+		// TODO: remove this
+		const slug = title.trim().toLowerCase().replaceAll(' ', '-');
+		throw redirect(301, `/campaigns/${slug}`)
 	}
 } satisfies Actions;
 
